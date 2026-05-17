@@ -330,7 +330,7 @@ def cmd_codex_bridge_status(args: argparse.Namespace) -> Any:
 
 
 def cmd_codex_bridge_run(args: argparse.Namespace) -> Any:
-    from agentmail.codex_bridge import start_bridge, stop_bridge
+    from agentmail.codex_bridge import clear_foreground_run, register_foreground_run, start_bridge, stop_bridge
 
     db_path = _service(args).store.db_path
     start_bridge(
@@ -348,10 +348,13 @@ def cmd_codex_bridge_run(args: argparse.Namespace) -> Any:
     cmd = ["codex", "--remote", args.listen]
     if args.workspace:
         cmd.extend(["--cd", args.workspace])
+    register_foreground_run(db_path, args.room, args.agent)
     try:
-        completed = subprocess.run(cmd, check=False)
-        return {"codex_exit_code": completed.returncode}
+        process = subprocess.Popen(cmd)
+        register_foreground_run(db_path, args.room, args.agent, remote_pid=process.pid)
+        return {"codex_exit_code": process.wait()}
     finally:
+        clear_foreground_run(db_path, args.room, args.agent)
         if not args.keep_running:
             stop_bridge(db_path, args.room, args.agent)
 

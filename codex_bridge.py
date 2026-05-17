@@ -42,6 +42,8 @@ class BridgePaths:
     log_dir: Path
     bridge_pid: Path
     app_server_pid: Path
+    run_pid: Path
+    remote_pid: Path
     config: Path
     log: Path
     app_server_log: Path
@@ -57,6 +59,8 @@ def bridge_paths(db_path: str | os.PathLike[str], room_name: str, agent_name: st
         log_dir=log_dir,
         bridge_pid=bridge_dir / f"{stem}.pid",
         app_server_pid=bridge_dir / f"{stem}.appserver.pid",
+        run_pid=bridge_dir / f"{stem}.run.pid",
+        remote_pid=bridge_dir / f"{stem}.remote.pid",
         config=bridge_dir / f"{stem}.json",
         log=log_dir / f"{stem}.codex-bridge.log",
         app_server_log=log_dir / f"{stem}.codex-app-server.log",
@@ -67,6 +71,8 @@ def bridge_status(db_path: str | os.PathLike[str], room_name: str, agent_name: s
     paths = bridge_paths(db_path, room_name, agent_name)
     bridge_pid = _read_pid(paths.bridge_pid)
     app_server_pid = _read_pid(paths.app_server_pid)
+    run_pid = _read_pid(paths.run_pid)
+    remote_pid = _read_pid(paths.remote_pid)
     config = _read_json(paths.config)
     return {
         "agent": agent_name,
@@ -79,6 +85,12 @@ def bridge_status(db_path: str | os.PathLike[str], room_name: str, agent_name: s
         "app_server_pid": app_server_pid,
         "app_server_pid_file": str(paths.app_server_pid),
         "app_server_log_file": str(paths.app_server_log),
+        "run_running": bool(run_pid and pid_alive(run_pid)),
+        "run_pid": run_pid,
+        "run_pid_file": str(paths.run_pid),
+        "remote_running": bool(remote_pid and pid_alive(remote_pid)),
+        "remote_pid": remote_pid,
+        "remote_pid_file": str(paths.remote_pid),
         "config_file": str(paths.config),
         "config": config,
     }
@@ -181,25 +193,68 @@ def stop_bridge(db_path: str | os.PathLike[str], room_name: str, agent_name: str
     config = _read_json(paths.config) or {}
     bridge_pid = _read_pid(paths.bridge_pid)
     app_server_pid = _read_pid(paths.app_server_pid)
+    run_pid = _read_pid(paths.run_pid)
+    remote_pid = _read_pid(paths.remote_pid)
+    remote_stopped = _terminate_pid(remote_pid)
     bridge_stopped = _terminate_pid(bridge_pid)
     app_server_stopped = False
     if config.get("managed_app_server", True):
         app_server_stopped = _terminate_pid(app_server_pid)
+    run_stopped = False
+    if run_pid and run_pid != os.getpid():
+        run_stopped = _terminate_pid(run_pid)
+    run_is_current_process = bool(run_pid and run_pid == os.getpid())
+    _unlink_pid_file_if_stopped(paths.remote_pid, remote_pid, remote_stopped)
     _unlink_pid_file_if_stopped(paths.bridge_pid, bridge_pid, bridge_stopped)
     if config.get("managed_app_server", True):
         _unlink_pid_file_if_stopped(paths.app_server_pid, app_server_pid, app_server_stopped)
+    _unlink_pid_file_if_stopped(paths.run_pid, run_pid, run_stopped or run_is_current_process)
+    bridge_running_after = bool(bridge_pid and pid_alive(bridge_pid))
+    app_server_running_after = bool(
+        config.get("managed_app_server", True) and app_server_pid and pid_alive(app_server_pid)
+    )
+    run_running_after = bool(run_pid and not run_is_current_process and pid_alive(run_pid))
+    remote_running_after = bool(remote_pid and pid_alive(remote_pid))
     return {
         "agent": agent_name,
         "room": room_name,
-        "stopped": bridge_stopped,
+        "stopped": not (bridge_running_after or app_server_running_after or run_running_after or remote_running_after),
+        "bridge_stopped": bridge_stopped,
         "pid": bridge_pid,
         "app_server_stopped": app_server_stopped,
         "app_server_pid": app_server_pid,
+        "run_stopped": run_stopped,
+        "run_pid": run_pid,
+        "remote_stopped": remote_stopped,
+        "remote_pid": remote_pid,
         "pid_file": str(paths.bridge_pid),
         "app_server_pid_file": str(paths.app_server_pid),
+        "run_pid_file": str(paths.run_pid),
+        "remote_pid_file": str(paths.remote_pid),
         "log_file": str(paths.log),
         "app_server_log_file": str(paths.app_server_log),
     }
+
+
+def register_foreground_run(
+    db_path: str | os.PathLike[str],
+    room_name: str,
+    agent_name: str,
+    *,
+    run_pid: int | None = None,
+    remote_pid: int | None = None,
+) -> None:
+    paths = bridge_paths(db_path, room_name, agent_name)
+    paths.bridge_dir.mkdir(parents=True, exist_ok=True)
+    paths.run_pid.write_text(str(run_pid or os.getpid()), encoding="utf-8")
+    if remote_pid:
+        paths.remote_pid.write_text(str(remote_pid), encoding="utf-8")
+
+
+def clear_foreground_run(db_path: str | os.PathLike[str], room_name: str, agent_name: str) -> None:
+    paths = bridge_paths(db_path, room_name, agent_name)
+    _unlink_file(paths.remote_pid)
+    _unlink_file(paths.run_pid)
 
 
 def start_app_server_process(paths: BridgePaths, listen: str) -> dict[str, Any]:

@@ -10,11 +10,15 @@ from agentmail.codex_bridge import (
     CodexBridgeError,
     _WebSocket,
     _ready_url,
+    bridge_paths,
     bridge_status,
+    clear_foreground_run,
     deliver_message,
     format_codex_input,
     poll_once,
+    register_foreground_run,
     start_bridge,
+    stop_bridge,
 )
 from agentmail.service import AgentMailService
 from agentmail.store import AgentMailStore
@@ -32,7 +36,7 @@ class FakeCodexClient:
         if method == "thread/start":
             return {"thread": {"id": "thread-created"}}
         if method == "turn/start":
-            return {"turn": {"id": "turn-1"}}
+            return {"turn": {"id": "turn-1", "status": "inProgress"}}
         if method == "thread/inject_items":
             return {}
         raise AssertionError(f"unexpected method: {method}")
@@ -95,6 +99,7 @@ class AgentMailCodexBridgeTests(unittest.TestCase):
         self.assertEqual(client.calls[0][0], "thread/loaded/list")
         self.assertEqual(client.calls[1][0], "turn/start")
         self.assertEqual(client.calls[1][1]["threadId"], "thread-1")
+        self.assertEqual(result["result"]["turn"]["status"], "inProgress")
         self.assertIn("Please inspect this.", client.calls[1][1]["input"][0]["text"])
 
     def test_deliver_message_can_start_thread_and_inject(self) -> None:
@@ -219,6 +224,59 @@ class AgentMailCodexBridgeTests(unittest.TestCase):
             self.assertEqual(popen.call_args_list[0].args[0][:3], ["codex", "app-server", "--listen"])
             self.assertIn("codex-bridge", popen.call_args_list[1].args[0])
             self.assertEqual(bridge_status(db, "shop", "codex")["config"]["listen"], "ws://127.0.0.1:4999")
+
+    def test_foreground_run_pids_are_reported_and_cleared(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db = Path(temp_dir) / "agentmail.db"
+
+            with patch("agentmail.codex_bridge.pid_alive", return_value=True):
+                register_foreground_run(db, "shop", "codex", run_pid=111, remote_pid=222)
+                status = bridge_status(db, "shop", "codex")
+
+            self.assertEqual(status["run_pid"], 111)
+            self.assertTrue(status["run_running"])
+            self.assertEqual(status["remote_pid"], 222)
+            self.assertTrue(status["remote_running"])
+
+            clear_foreground_run(db, "shop", "codex")
+            status = bridge_status(db, "shop", "codex")
+            self.assertIsNone(status["run_pid"])
+            self.assertIsNone(status["remote_pid"])
+
+    def test_stop_bridge_stops_foreground_run_and_remote(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db = Path(temp_dir) / "agentmail.db"
+            paths = bridge_paths(db, "shop", "codex")
+            paths.bridge_dir.mkdir(parents=True, exist_ok=True)
+            paths.log_dir.mkdir(parents=True, exist_ok=True)
+            paths.config.write_text('{"managed_app_server": true}', encoding="utf-8")
+            paths.bridge_pid.write_text("111", encoding="utf-8")
+            paths.app_server_pid.write_text("222", encoding="utf-8")
+            paths.run_pid.write_text("333", encoding="utf-8")
+            paths.remote_pid.write_text("444", encoding="utf-8")
+            alive = {111, 222, 333, 444}
+
+            def fake_pid_alive(pid: int) -> bool:
+                return pid in alive
+
+            def fake_kill(pid: int, _signal: int) -> None:
+                alive.discard(pid)
+
+            with (
+                patch("agentmail.codex_bridge.pid_alive", side_effect=fake_pid_alive),
+                patch("agentmail.codex_bridge.os.kill", side_effect=fake_kill),
+            ):
+                result = stop_bridge(db, "shop", "codex")
+
+            self.assertTrue(result["stopped"])
+            self.assertTrue(result["bridge_stopped"])
+            self.assertTrue(result["app_server_stopped"])
+            self.assertTrue(result["run_stopped"])
+            self.assertTrue(result["remote_stopped"])
+            self.assertFalse(paths.bridge_pid.exists())
+            self.assertFalse(paths.app_server_pid.exists())
+            self.assertFalse(paths.run_pid.exists())
+            self.assertFalse(paths.remote_pid.exists())
 
     def test_ready_url_skips_remote_endpoints(self) -> None:
         self.assertEqual(_ready_url("ws://127.0.0.1:4999"), "http://127.0.0.1:4999/readyz")
