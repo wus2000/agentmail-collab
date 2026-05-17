@@ -110,7 +110,8 @@ Claude-origin inbox messages into Codex through Codex App Server `turn/start`.
 
 By default AgentMail uses `<workspace>/.agentmail/agentmail.db`. The wrapper
 uses the workspace exposed by the client, and the MCP server also binds itself
-to the `workspace` passed on the first `agentmail_join` call. If neither is
+to `AGENTMAIL_WORKSPACE` or to the `workspace` passed on the first
+`agentmail_join` call. If neither is
 available, it falls back to:
 
 ```text

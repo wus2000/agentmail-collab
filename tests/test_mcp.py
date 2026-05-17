@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from agentmail.mcp_server import AgentMailMCP, channel_notification_for_message
 from agentmail.notify import write_channel_config
@@ -74,6 +76,22 @@ class AgentMailMcpTests(unittest.TestCase):
 
             self.assertEqual(peers[0]["name"], "codex")
             self.assertTrue((Path(workspace) / ".agentmail" / "agentmail.db").exists())
+
+    def test_environment_defaults_bind_database_room_and_agent(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            env = {
+                "AGENTMAIL_WORKSPACE": workspace,
+                "AGENTMAIL_ROOM": "shop",
+                "AGENTMAIL_AGENT": "codex",
+            }
+            with patch.dict(os.environ, env):
+                server = AgentMailMCP()
+                self.call(server, 1, "agentmail_join", {"agent_name": "codex", "agent_kind": "codex"})
+                status = self.call(server, 2, "agentmail_status", {})
+
+            self.assertEqual(status["agent"], "codex")
+            self.assertEqual(status["room"]["name"], "shop")
+            self.assertEqual(status["db_path"], str(Path(workspace) / ".agentmail" / "agentmail.db"))
 
     def test_unknown_tool_returns_error(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

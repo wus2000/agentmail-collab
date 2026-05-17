@@ -139,6 +139,10 @@ agentmail launch-codex --room ecommerce --workspace "$PWD" --resume last
 Codex process, so the AgentMail MCP tools and the active bridge resolve the same
 workspace database.
 
+Startup commands (`start`, `launch-codex`, and `bootstrap-codex`) also send a
+deduplicated discovery message to already-online peers. Pass `--no-announce` if
+you want a quiet join.
+
 If you already opened a normal Codex TUI, ask it to run:
 
 ```bash

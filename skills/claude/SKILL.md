@@ -30,6 +30,8 @@ agentmail start --agent claude --kind claude --room ecommerce
 `start` also writes the Claude channel target config. If the AgentMail plugin
 was launched with Claude Code channels enabled, future inbox messages for that
 room arrive in the running session as `<channel source="agentmail" ...>` events.
+Startup `start` also announces the session to online peers once. Use
+`agentmail join ... --no-announce` only for quiet heartbeats or low-level tests.
 
 ## Basic Collaboration Loop
 

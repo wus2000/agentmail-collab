@@ -48,6 +48,7 @@ TOOLS = [
             "room_name": {"type": "string", "default": "default"},
             "workspace": {"type": "string", "default": "."},
             "capabilities": {"type": "array", "items": {"type": "string"}},
+            "announce": {"type": "boolean", "default": False},
         },
         ["agent_name", "agent_kind"],
     ),
@@ -309,6 +310,10 @@ class AgentMailMCP:
         if workspace:
             self.active_db_path = str(default_db_path(workspace))
             return self.active_db_path
+        env_db = _env_db_path()
+        if env_db:
+            self.active_db_path = env_db
+            return self.active_db_path
         if self.active_db_path:
             return self.active_db_path
         self.active_db_path = str(default_db_path())
@@ -398,6 +403,7 @@ class AgentMailMCP:
                 arguments = params.get("arguments") or {}
                 if tool_name not in TOOL_TO_METHOD:
                     raise ValueError(f"unknown tool: {tool_name}")
+                arguments = _apply_env_defaults(tool_name, dict(arguments))
                 result = call_method(self._db_path_for_call(arguments), TOOL_TO_METHOD[tool_name], arguments)
                 if tool_name == "agentmail_join" and self.channel_enabled and arguments.get("agent_kind") == "claude":
                     result["channel"] = write_channel_config(
@@ -469,6 +475,31 @@ def _default_channel_config() -> dict[str, Any]:
         "agent_name": os.environ.get("AGENTMAIL_CHANNEL_AGENT", "claude"),
         "updated_at": _CHANNEL_PROCESS_STARTED_AT,
     }
+
+
+def _env_db_path() -> str:
+    if os.environ.get("AGENTMAIL_DB") or os.environ.get("AGENTMAIL_WORKSPACE") or os.environ.get("CODEX_WORKSPACE_ROOT"):
+        return str(default_db_path())
+    return ""
+
+
+def _apply_env_defaults(tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    room = os.environ.get("AGENTMAIL_ROOM")
+    if room and "room_name" not in arguments:
+        arguments["room_name"] = room
+    agent = os.environ.get("AGENTMAIL_AGENT")
+    if agent and tool_name in {
+        "agentmail_status",
+        "agentmail_inbox",
+        "agentmail_notify_start",
+        "agentmail_notify_stop",
+        "agentmail_notify_status",
+        "agentmail_codex_bridge_start",
+        "agentmail_codex_bridge_stop",
+        "agentmail_codex_bridge_status",
+    } and "agent_name" not in arguments:
+        arguments["agent_name"] = agent
+    return arguments
 
 
 def _truthy(value: str) -> bool:

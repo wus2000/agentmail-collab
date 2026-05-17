@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +30,10 @@ class ConflictError(AgentMailError):
     pass
 
 
+DISCOVERY_TAG = "agentmail-discovery"
+DISCOVERY_DEDUP_SECONDS = 300
+
+
 class AgentMailService:
     """Workflow-free collaboration primitives for peer coding agents."""
 
@@ -42,6 +47,7 @@ class AgentMailService:
         room_name: str,
         workspace: str | None = None,
         capabilities: list[str] | None = None,
+        announce_discovery: bool = False,
     ) -> dict[str, Any]:
         workspace_root = str(Path(workspace or ".").expanduser().resolve())
         caps = capabilities or []
@@ -105,7 +111,13 @@ class AgentMailService:
                 event = "agent.joined"
             self.store.record_event(conn, "agent", agent.id, event, agent.name, asdict(agent))
             thread = self.store.ensure_thread(conn, room.id, "main")
-            return {"room": asdict(room), "agent": asdict(agent), "default_thread": asdict(thread)}
+            discovery = None
+            if announce_discovery:
+                discovery = self._maybe_insert_discovery(conn, room, thread, agent)
+            result = {"room": asdict(room), "agent": asdict(agent), "default_thread": asdict(thread)}
+            if discovery:
+                result["discovery"] = asdict(discovery)
+            return result
 
     def peers(self, room_name: str) -> list[dict[str, Any]]:
         with self.store.connect() as conn:
@@ -604,6 +616,60 @@ class AgentMailService:
                 message.updated_at,
             ),
         )
+
+    def _maybe_insert_discovery(self, conn: Any, room: Room, thread: Thread, agent: Agent) -> Message | None:
+        if room.status != "open":
+            return None
+        recipient_rows = conn.execute(
+            "SELECT * FROM agents WHERE room_id = ? AND name != ? AND status = 'online' ORDER BY name",
+            (room.id, agent.name),
+        ).fetchall()
+        recipients = [self.store._agent_from_row(row).name for row in recipient_rows]
+        if not recipients:
+            return None
+        cutoff = (datetime.utcnow() - timedelta(seconds=DISCOVERY_DEDUP_SECONDS)).isoformat(timespec="microseconds") + "Z"
+        recent = conn.execute(
+            """
+            SELECT id FROM messages
+            WHERE room_id = ? AND from_agent = ? AND created_at >= ? AND tags_json LIKE ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+            """,
+            (room.id, agent.name, cutoff, f'%"{DISCOVERY_TAG}"%'),
+        ).fetchone()
+        if recent:
+            return None
+        capabilities = ", ".join(agent.capabilities) if agent.capabilities else "(none)"
+        body = "\n".join(
+            [
+                "AgentMail discovery notice.",
+                "",
+                f"Agent `{agent.name}` joined room `{room.name}`.",
+                f"Kind: {agent.kind}",
+                f"Workspace: {agent.workspace}",
+                f"Capabilities: {capabilities}",
+            ]
+        )
+        now = utc_now()
+        message = Message(
+            id=make_id("msg"),
+            room_id=room.id,
+            thread_id=thread.id,
+            from_agent=agent.name,
+            to_agents=recipients,
+            subject=f"AgentMail discovery: {agent.name} joined {room.name}",
+            body=body,
+            tags=[DISCOVERY_TAG, "presence"],
+            refs=[],
+            status="queued",
+            expects_reply=False,
+            trace_id=make_id("trace"),
+            created_at=now,
+            updated_at=now,
+        )
+        self._insert_message(conn, message)
+        self.store.record_event(conn, "message", message.id, "message.discovery", agent.name, asdict(message))
+        return message
 
     def _scope_conflicts(
         self,

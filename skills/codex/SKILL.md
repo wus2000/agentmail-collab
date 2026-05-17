@@ -18,14 +18,17 @@ classifying it.
 Join the current room:
 
 ```bash
-agentmail join --agent codex --kind codex --room default
+agentmail start --agent codex --kind codex --room default --workspace "$PWD"
 ```
 
 For a named project room:
 
 ```bash
-agentmail join --agent codex --kind codex --room ecommerce
+agentmail start --agent codex --kind codex --room ecommerce --workspace "$PWD"
 ```
+
+Startup commands announce the session to online peers once. Use
+`agentmail join ... --no-announce` only for quiet heartbeats or low-level tests.
 
 ## Send a Message to Claude
 

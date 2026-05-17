@@ -86,6 +86,37 @@ class AgentMailServiceTests(unittest.TestCase):
             self.assertEqual(service.inbox("codex", "shop")[0]["body"], "Shared decision: start small.")
             self.assertEqual(service.inbox("claude", "shop"), [])
 
+    def test_join_can_send_deduplicated_discovery_to_existing_peers(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            service = self.make_service(temp_dir)
+            service.join("claude", "claude", "shop", workspace=temp_dir, capabilities=["peer-mailbox"])
+
+            joined = service.join(
+                "codex",
+                "codex",
+                "shop",
+                workspace=temp_dir,
+                capabilities=["peer-mailbox", "active-wakeup"],
+                announce_discovery=True,
+            )
+            repeated = service.join(
+                "codex",
+                "codex",
+                "shop",
+                workspace=temp_dir,
+                capabilities=["peer-mailbox", "active-wakeup"],
+                announce_discovery=True,
+            )
+
+            self.assertEqual(joined["discovery"]["to_agents"], ["claude"])
+            self.assertEqual(joined["discovery"]["expects_reply"], False)
+            self.assertIn("agentmail-discovery", joined["discovery"]["tags"])
+            self.assertNotIn("discovery", repeated)
+            inbox = service.inbox("claude", "shop")
+            self.assertEqual(len(inbox), 1)
+            self.assertEqual(inbox[0]["subject"], "AgentMail discovery: codex joined shop")
+            self.assertIn("Agent `codex` joined room `shop`.", inbox[0]["body"])
+
     def test_scope_claim_conflict_and_release(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             service = self.make_service(temp_dir)

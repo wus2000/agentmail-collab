@@ -32,6 +32,7 @@ def call_method(db_path: str | None, method: str, params: dict[str, Any]) -> Any
             params.get("room_name", "default"),
             params.get("workspace", "."),
             params.get("capabilities", []),
+            params.get("announce", False),
         ),
         "peers": lambda: service.peers(params.get("room_name", "default")),
         "status": lambda: service.status(

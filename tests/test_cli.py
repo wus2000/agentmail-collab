@@ -133,6 +133,53 @@ class AgentMailCliTests(unittest.TestCase):
             self.assertEqual(started["channel"]["config"]["agent_name"], "claude")
             self.assertTrue((db.parent / "channel.json").exists())
 
+    def test_cli_start_announces_to_existing_peers_by_default(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db = Path(temp_dir) / "agentmail.db"
+            self.run_cli(db, "join", "--agent", "claude", "--kind", "claude", "--room", "shop", "--workspace", temp_dir)
+
+            rc, start_text = self.run_cli(
+                db,
+                "start",
+                "--agent",
+                "codex",
+                "--kind",
+                "codex",
+                "--room",
+                "shop",
+                "--workspace",
+                temp_dir,
+            )
+
+            self.assertEqual(rc, 0)
+            started = json.loads(start_text)
+            self.assertEqual(started["joined"]["discovery"]["to_agents"], ["claude"])
+            rc, inbox_text = self.run_cli(db, "inbox", "--agent", "claude", "--room", "shop")
+            self.assertEqual(rc, 0)
+            self.assertEqual(json.loads(inbox_text)[0]["subject"], "AgentMail discovery: codex joined shop")
+
+    def test_cli_join_is_quiet_unless_announce_is_requested(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db = Path(temp_dir) / "agentmail.db"
+            self.run_cli(db, "join", "--agent", "claude", "--kind", "claude", "--room", "shop", "--workspace", temp_dir)
+
+            rc, text = self.run_cli(
+                db,
+                "join",
+                "--agent",
+                "codex",
+                "--kind",
+                "codex",
+                "--room",
+                "shop",
+                "--workspace",
+                temp_dir,
+            )
+
+            self.assertEqual(rc, 0)
+            self.assertNotIn("discovery", json.loads(text))
+            self.assertEqual(json.loads(self.run_cli(db, "inbox", "--agent", "claude", "--room", "shop")[1]), [])
+
     def test_cli_start_uses_workspace_for_default_db(self) -> None:
         with tempfile.TemporaryDirectory() as workspace, tempfile.TemporaryDirectory() as other_dir:
             previous = os.getcwd()

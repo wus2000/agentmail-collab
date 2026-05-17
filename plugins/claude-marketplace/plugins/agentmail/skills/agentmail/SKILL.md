@@ -31,6 +31,8 @@ Startup pattern for Claude Code:
 2. Always pass `${CLAUDE_PROJECT_DIR}` as `workspace` when available.
    AgentMail uses that path to select `<workspace>/.agentmail/agentmail.db`
    for this MCP session.
+   If this is a startup join rather than a quiet heartbeat, pass
+   `announce: true` so online peers receive one deduplicated discovery message.
 3. If Claude Code was launched with channels enabled for this plugin, AgentMail
    pushes future inbox messages into the running session as
    `<channel source="agentmail" ...>` events. The event body is the exact peer

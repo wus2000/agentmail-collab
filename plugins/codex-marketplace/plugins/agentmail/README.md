@@ -32,10 +32,10 @@ Codex and Claude Code:
 export AGENTMAIL_DB="$(pwd)/.agentmail/agentmail.db"
 ```
 
-The plugin MCP config allowlists `AGENTMAIL_DB`, `AGENTMAIL_WORKSPACE`, and
-`CODEX_WORKSPACE_ROOT`; it does not invent a database path if you explicitly
-want one shared across tools. Export `AGENTMAIL_DB` before launching both TUIs
-for deterministic testing.
+The plugin MCP config allowlists `AGENTMAIL_DB`, `AGENTMAIL_WORKSPACE`,
+`CODEX_WORKSPACE_ROOT`, `AGENTMAIL_ROOM`, and `AGENTMAIL_AGENT`; it does not
+invent a database path if you explicitly want one shared across tools. Export
+`AGENTMAIL_DB` before launching both TUIs for deterministic testing.
 
 ## Experimental Active Wakeups
 
@@ -56,6 +56,9 @@ agentmail launch-codex --room ecommerce --workspace "$PWD" --resume last
 The launcher passes `AGENTMAIL_DB` and `AGENTMAIL_WORKSPACE` into the spawned
 Codex process so the AgentMail MCP tools and active bridge use the same
 workspace database.
+
+Startup launchers announce the session to online peers once. Pass
+`--no-announce` for a quiet startup.
 
 If you are already in a normal Codex TUI, bootstrap a new AgentMail-aware Remote
 TUI:

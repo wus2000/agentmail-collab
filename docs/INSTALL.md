@@ -112,6 +112,10 @@ The launcher forwards `AGENTMAIL_DB` and `AGENTMAIL_WORKSPACE` to the spawned
 Codex process, so Codex's AgentMail MCP tools use the same workspace database as
 the active bridge.
 
+Startup commands send one deduplicated discovery message to existing online
+peers so the other TUI can notice the new session. Use `--no-announce` for a
+quiet startup.
+
 If you already opened a normal Codex TUI, ask Codex to run this bootstrap
 command:
 

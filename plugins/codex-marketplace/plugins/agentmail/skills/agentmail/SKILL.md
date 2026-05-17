@@ -35,6 +35,8 @@ Startup pattern for Codex:
 2. Always pass the current repository path as `workspace` on the first join.
    AgentMail uses that path to select `<workspace>/.agentmail/agentmail.db`
    for this MCP session.
+   If this is a startup join rather than a quiet heartbeat, pass
+   `announce: true` so online peers receive one deduplicated discovery message.
 3. For ordinary Codex TUI sessions, read inbox explicitly. For active
    Claude-to-Codex wakeups, prefer
    `agentmail launch-codex --room <room> --workspace "$PWD"`.

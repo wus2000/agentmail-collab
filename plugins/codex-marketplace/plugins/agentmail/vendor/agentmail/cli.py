@@ -178,7 +178,7 @@ def _emit_item(item: Any) -> None:
 def cmd_join(args: argparse.Namespace) -> Any:
     caps = args.capability or []
     service = _service(args)
-    joined = service.join(args.agent, args.kind, args.room, args.workspace, caps)
+    joined = service.join(args.agent, args.kind, args.room, args.workspace, caps, args.announce)
     if args.kind == "claude":
         joined["channel"] = write_channel_config(service.store.db_path, args.room, args.agent)
     return joined
@@ -187,7 +187,7 @@ def cmd_join(args: argparse.Namespace) -> Any:
 def cmd_start(args: argparse.Namespace) -> Any:
     service = _service(args)
     caps = args.capability or []
-    joined = service.join(args.agent, args.kind, args.room, args.workspace, caps)
+    joined = service.join(args.agent, args.kind, args.room, args.workspace, caps, args.announce)
     channel = None
     if args.kind == "claude":
         channel = write_channel_config(service.store.db_path, args.room, args.agent)
@@ -462,6 +462,7 @@ def cmd_launch_codex(args: argparse.Namespace) -> Any:
         args.room,
         str(workspace),
         ["peer-mailbox", "code-collaboration", "active-wakeup"],
+        args.announce,
     )
     run_args = argparse.Namespace(
         **{
@@ -485,6 +486,7 @@ def cmd_bootstrap_codex(args: argparse.Namespace) -> Any:
         args.room,
         str(workspace),
         ["peer-mailbox", "code-collaboration", "active-wakeup"],
+        args.announce,
     )
     launch_command = _agentmail_module_command(
         args,
@@ -512,6 +514,8 @@ def cmd_bootstrap_codex(args: argparse.Namespace) -> Any:
         launch_command += " --keep-running"
     if args.resume:
         launch_command += " " + shlex.join(["--resume", args.resume])
+    if not args.announce:
+        launch_command += " --no-announce"
     command = f"cd {shlex.quote(str(workspace))} && {launch_command}"
     opened = False if args.dry_run else (_open_terminal(command) if args.open_terminal else False)
     return {
@@ -589,6 +593,7 @@ def build_parser() -> argparse.ArgumentParser:
     join.add_argument("--room", default="default")
     join.add_argument("--workspace", default=".")
     join.add_argument("--capability", action="append", default=[])
+    _add_announce_arg(join, default=False)
     join.set_defaults(func=cmd_join)
 
     start = sub.add_parser("start", help="Join a room and show current peers and inbox.")
@@ -598,6 +603,7 @@ def build_parser() -> argparse.ArgumentParser:
     start.add_argument("--workspace", default=".")
     start.add_argument("--capability", action="append", default=[])
     start.add_argument("--limit", type=int, default=20)
+    _add_announce_arg(start, default=True)
     start.set_defaults(func=cmd_start)
 
     peers = sub.add_parser("peers", help="List agents in a room.")
@@ -757,6 +763,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_codex_launcher_args(launch_codex)
     launch_codex.add_argument("--keep-running", action="store_true", help="Leave the bridge and managed app-server running when Codex exits.")
+    _add_announce_arg(launch_codex, default=True)
     launch_codex.set_defaults(func=cmd_launch_codex)
 
     bootstrap_codex = sub.add_parser(
@@ -767,6 +774,7 @@ def build_parser() -> argparse.ArgumentParser:
     bootstrap_codex.add_argument("--open-terminal", action=argparse.BooleanOptionalAction, default=True)
     bootstrap_codex.add_argument("--keep-running", action="store_true", help="Leave the bridge and managed app-server running when Codex exits.")
     bootstrap_codex.add_argument("--dry-run", action="store_true", help="Print the launch command without opening a terminal.")
+    _add_announce_arg(bootstrap_codex, default=True)
     bootstrap_codex.set_defaults(func=cmd_bootstrap_codex)
 
     doctor = sub.add_parser("doctor", help="Check local AgentMail collaboration state for a workspace.")
@@ -851,6 +859,15 @@ def _add_codex_launcher_args(parser: argparse.ArgumentParser) -> None:
         default="",
         metavar="SESSION",
         help="Resume a Codex session in the remote TUI. Use without a value for the picker, `last` for the most recent session, or pass a session id/thread name.",
+    )
+
+
+def _add_announce_arg(parser: argparse.ArgumentParser, *, default: bool) -> None:
+    parser.add_argument(
+        "--announce",
+        action=argparse.BooleanOptionalAction,
+        default=default,
+        help="Send a deduplicated AgentMail discovery message to online peers after joining.",
     )
 
 
