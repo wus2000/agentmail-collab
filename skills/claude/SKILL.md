@@ -18,13 +18,13 @@ rewrite, template, or trim it.
 Join the room for the current codebase:
 
 ```bash
-python -m agentmail start --agent claude --kind claude --room default
+agentmail start --agent claude --kind claude --room default
 ```
 
 If the user names a project room, use that room name:
 
 ```bash
-python -m agentmail start --agent claude --kind claude --room ecommerce
+agentmail start --agent claude --kind claude --room ecommerce
 ```
 
 `start` also writes the Claude channel target config. If the AgentMail plugin
@@ -36,31 +36,31 @@ room arrive in the running session as `<channel source="agentmail" ...>` events.
 1. Check peers:
 
 ```bash
-python -m agentmail peers --room ecommerce
+agentmail peers --room ecommerce
 ```
 
 2. Check inbox:
 
 ```bash
-python -m agentmail inbox --agent claude --room ecommerce
+agentmail inbox --agent claude --room ecommerce
 ```
 
 3. Read thread before replying:
 
 ```bash
-python -m agentmail read-thread --room ecommerce --thread main
+agentmail read-thread --room ecommerce --thread main
 ```
 
 4. Mark a message when you start handling it:
 
 ```bash
-python -m agentmail mark --agent claude --message msg_xxx --status claimed
+agentmail mark --agent claude --message msg_xxx --status claimed
 ```
 
 5. Reply naturally:
 
 ```bash
-python -m agentmail reply --agent claude --message msg_xxx --body "My recommendation is..."
+agentmail reply --agent claude --message msg_xxx --body "My recommendation is..."
 ```
 
 ## File Scope
@@ -68,13 +68,13 @@ python -m agentmail reply --agent claude --message msg_xxx --body "My recommenda
 Before editing files that Codex may also touch:
 
 ```bash
-python -m agentmail claim-scope --agent claude --room ecommerce --path src/orders --reason "Reviewing order domain model"
+agentmail claim-scope --agent claude --room ecommerce --path src/orders --reason "Reviewing order domain model"
 ```
 
 Release when finished:
 
 ```bash
-python -m agentmail release-scope --agent claude --room ecommerce --path src/orders
+agentmail release-scope --agent claude --room ecommerce --path src/orders
 ```
 
 ## Artifacts and Room Control
@@ -83,13 +83,13 @@ Register long logs, diffs, screenshots, or generated files instead of pasting
 them into messages:
 
 ```bash
-python -m agentmail artifact-add --agent claude --room ecommerce --type log --path .agentmail/artifacts/review.log --summary "Review notes"
+agentmail artifact-add --agent claude --room ecommerce --type log --path .agentmail/artifacts/review.log --summary "Review notes"
 ```
 
 Pause a room if the user redirects or asks agents to stop:
 
 ```bash
-python -m agentmail room-status --agent claude --room ecommerce --status paused
+agentmail room-status --agent claude --room ecommerce --status paused
 ```
 
 ## Behavior

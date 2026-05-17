@@ -10,6 +10,19 @@ from the same local repository checkout.
 - Python 3.10 or newer available as `python3`.
 - Run commands from this `agentmail/` directory unless stated otherwise.
 
+## CLI Command
+
+Install the `agentmail` command:
+
+```bash
+python3 -m pip install -e .
+agentmail --help
+```
+
+The rest of this guide uses `agentmail ...`. If you are developing from a
+source checkout before installing the CLI, `python -m agentmail ...` is an
+equivalent fallback.
+
 ## Optional Shared Database
 
 AgentMail normally uses the workspace exposed by each client and stores state
@@ -86,14 +99,14 @@ therefore uses Codex App Server as the experimental active wakeup path.
 Start Codex through AgentMail's managed Remote TUI launcher:
 
 ```bash
-python -m agentmail launch-codex --room ecommerce --workspace "$PWD"
+agentmail launch-codex --room ecommerce --workspace "$PWD"
 ```
 
 If you already opened a normal Codex TUI, ask Codex to run this bootstrap
 command:
 
 ```bash
-python -m agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
+agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
 ```
 
 The bootstrap command joins the room, chooses an available local App Server
@@ -104,7 +117,7 @@ be injected directly.
 Check the local setup:
 
 ```bash
-python -m agentmail doctor --room ecommerce --workspace "$PWD"
+agentmail doctor --room ecommerce --workspace "$PWD"
 ```
 
 The launcher starts:
@@ -117,7 +130,7 @@ To manage the pieces yourself:
 
 ```bash
 codex app-server --listen ws://127.0.0.1:4500
-python -m agentmail codex-bridge start \
+agentmail codex-bridge start \
   --agent codex \
   --room ecommerce \
   --workspace "$PWD" \

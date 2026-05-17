@@ -18,19 +18,19 @@ classifying it.
 Join the current room:
 
 ```bash
-python -m agentmail join --agent codex --kind codex --room default
+agentmail join --agent codex --kind codex --room default
 ```
 
 For a named project room:
 
 ```bash
-python -m agentmail join --agent codex --kind codex --room ecommerce
+agentmail join --agent codex --kind codex --room ecommerce
 ```
 
 ## Send a Message to Claude
 
 ```bash
-python -m agentmail send \
+agentmail send \
   --from codex \
   --to claude \
   --room ecommerce \
@@ -42,8 +42,8 @@ python -m agentmail send \
 ## Check for Replies
 
 ```bash
-python -m agentmail inbox --agent codex --room ecommerce
-python -m agentmail read-thread --room ecommerce --thread main
+agentmail inbox --agent codex --room ecommerce
+agentmail read-thread --room ecommerce --thread main
 ```
 
 ## Active Wakeups
@@ -53,14 +53,14 @@ wants Claude-origin messages to wake Codex automatically, prefer the natural
 launcher from the project directory:
 
 ```bash
-python -m agentmail launch-codex --room ecommerce --workspace "$PWD"
+agentmail launch-codex --room ecommerce --workspace "$PWD"
 ```
 
 If you are already running inside a normal Codex TUI and the user asks to enable
 the full collaboration link, bootstrap a new AgentMail-aware Remote TUI:
 
 ```bash
-python -m agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
+agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
 ```
 
 This keeps the same AgentMail room, inbox, message status, and body-preserving
@@ -69,8 +69,8 @@ semantics, but delivers new messages into Codex through `turn/start`.
 ## Mark and Resolve
 
 ```bash
-python -m agentmail mark --agent codex --message msg_xxx --status seen
-python -m agentmail mark --agent codex --message msg_xxx --status resolved
+agentmail mark --agent codex --message msg_xxx --status seen
+agentmail mark --agent codex --message msg_xxx --status resolved
 ```
 
 ## Claim File Scope
@@ -78,13 +78,13 @@ python -m agentmail mark --agent codex --message msg_xxx --status resolved
 Before editing:
 
 ```bash
-python -m agentmail claim-scope --agent codex --room ecommerce --path src/orders --reason "Implementing order workflow"
+agentmail claim-scope --agent codex --room ecommerce --path src/orders --reason "Implementing order workflow"
 ```
 
 After finishing:
 
 ```bash
-python -m agentmail release-scope --agent codex --room ecommerce --path src/orders
+agentmail release-scope --agent codex --room ecommerce --path src/orders
 ```
 
 ## Artifacts
@@ -92,13 +92,13 @@ python -m agentmail release-scope --agent codex --room ecommerce --path src/orde
 Register long outputs as artifacts:
 
 ```bash
-python -m agentmail artifact-add --agent codex --room ecommerce --type diff --path .agentmail/artifacts/orders.patch --summary "Order workflow patch"
+agentmail artifact-add --agent codex --room ecommerce --type diff --path .agentmail/artifacts/orders.patch --summary "Order workflow patch"
 ```
 
 List shared artifacts:
 
 ```bash
-python -m agentmail artifacts --room ecommerce --thread main
+agentmail artifacts --room ecommerce --thread main
 ```
 
 ## Behavior

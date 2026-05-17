@@ -61,12 +61,18 @@ fi
 cat <<EOF
 AgentMail local marketplace installed.
 
+CLI command, if not already installed:
+  python3 -m pip install -e "${ROOT}"
+
 Claude channel startup:
   claude --dangerously-load-development-channels plugin:agentmail@agentmail-local
 
 Claude room command:
   /agentmail:start ecommerce claude
 
-Codex room prompt:
+Codex active-wakeup startup:
+  agentmail launch-codex --room ecommerce --workspace "\$PWD"
+
+Codex ordinary room prompt:
   Use @agentmail. Join room ecommerce as codex, list peers, and check my inbox.
 EOF

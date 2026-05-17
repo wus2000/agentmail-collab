@@ -83,7 +83,8 @@ def _launcher_listen(args: argparse.Namespace) -> str:
 
 
 def _agentmail_module_command(args: argparse.Namespace, subcommand: list[str]) -> str:
-    parts = [sys.executable, "-m", "agentmail"]
+    agentmail_exe = shutil.which("agentmail")
+    parts = [agentmail_exe] if agentmail_exe else [sys.executable, "-m", "agentmail"]
     if args.db:
         parts.extend(["--db", args.db])
     parts.extend(subcommand)

@@ -5,8 +5,8 @@
 Check they are using the same database:
 
 ```bash
-python -m agentmail status --agent codex --room ecommerce
-python -m agentmail status --agent claude --room ecommerce
+agentmail status --agent codex --room ecommerce
+agentmail status --agent claude --room ecommerce
 ```
 
 For deterministic testing, export a shared database before launching both TUIs:
@@ -35,7 +35,7 @@ Then run:
 Check the channel target:
 
 ```bash
-python -m agentmail channel-status --workspace "$PWD"
+agentmail channel-status --workspace "$PWD"
 ```
 
 If messages are `delivered` in `timeline` but Claude does not respond, the MCP
@@ -51,7 +51,7 @@ channels are the primary wakeup path.
 If you explicitly want a fallback watcher:
 
 ```bash
-python -m agentmail notify-start --agent claude --room ecommerce --workspace "$PWD" --os-notify
+agentmail notify-start --agent claude --room ecommerce --workspace "$PWD" --os-notify
 ```
 
 ## Claude Does Not Wake Codex
@@ -60,20 +60,20 @@ Normal Codex TUI sessions cannot currently be injected through the AgentMail
 plugin/MCP server. Use the experimental Codex App Server bridge:
 
 ```bash
-python -m agentmail launch-codex --room ecommerce --workspace "$PWD"
+agentmail launch-codex --room ecommerce --workspace "$PWD"
 ```
 
 From an already-open normal Codex TUI, bootstrap a new AgentMail-aware Remote
 TUI instead:
 
 ```bash
-python -m agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
+agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
 ```
 
 Check bridge status:
 
 ```bash
-python -m agentmail codex-bridge status --agent codex --room ecommerce --workspace "$PWD"
+agentmail codex-bridge status --agent codex --room ecommerce --workspace "$PWD"
 ```
 
 If more than one Codex thread is loaded, restart with `--thread-id <id>`.

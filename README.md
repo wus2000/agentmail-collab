@@ -44,7 +44,7 @@ agentmail/
   models.py       Generic domain models
   store.py        SQLite persistence and event log
   service.py      Workflow-free application API
-  cli.py          `python -m agentmail ...`
+  cli.py          `agentmail ...`
   codex_bridge.py Experimental Codex App Server bridge
   daemon.py       Local JSON RPC daemon
   mcp_server.py   Minimal stdio MCP server and Claude channel
@@ -61,10 +61,21 @@ agentmail/
 AgentMail is packaged so this `agentmail/` directory can be used as the
 marketplace root for both Claude Code and Codex.
 
-Claude Code:
+Install the CLI command first:
 
 ```bash
 cd agentmail
+python3 -m pip install -e .
+agentmail --help
+```
+
+The docs use `agentmail ...` for normal usage. When hacking directly on the
+source tree before installing the CLI, `python -m agentmail ...` remains an
+equivalent fallback.
+
+Claude Code:
+
+```bash
 claude plugin validate .
 claude plugin marketplace add "$(pwd)" --scope local
 claude plugin install agentmail@agentmail-local --scope local
@@ -115,13 +126,13 @@ For the natural "start a collaboration-ready Codex" path, launch Codex through
 AgentMail from the project directory:
 
 ```bash
-python -m agentmail launch-codex --room ecommerce --workspace "$PWD"
+agentmail launch-codex --room ecommerce --workspace "$PWD"
 ```
 
 If you already opened a normal Codex TUI, ask it to run:
 
 ```bash
-python -m agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
+agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
 ```
 
 `bootstrap-codex` prepares the workspace and opens a new AgentMail-aware Codex
@@ -131,14 +142,14 @@ original normal TUI still cannot be injected directly.
 You can inspect the local setup at any time:
 
 ```bash
-python -m agentmail doctor --room ecommerce --workspace "$PWD"
+agentmail doctor --room ecommerce --workspace "$PWD"
 ```
 
 Or run the pieces manually:
 
 ```bash
 codex app-server --listen ws://127.0.0.1:4500
-python -m agentmail codex-bridge start \
+agentmail codex-bridge start \
   --agent codex \
   --room ecommerce \
   --workspace "$PWD" \
@@ -158,16 +169,16 @@ the model by itself.
 From a repository where both agents are working:
 
 ```bash
-python -m agentmail start --agent claude --kind claude --room ecommerce
-python -m agentmail start --agent codex --kind codex --room ecommerce
-python -m agentmail peers --room ecommerce
-python -m agentmail status --agent codex --room ecommerce
+agentmail start --agent claude --kind claude --room ecommerce
+agentmail start --agent codex --kind codex --room ecommerce
+agentmail peers --room ecommerce
+agentmail status --agent codex --room ecommerce
 ```
 
 Send a message from Codex to Claude:
 
 ```bash
-python -m agentmail send \
+agentmail send \
   --from codex \
   --to claude \
   --room ecommerce \
@@ -179,15 +190,15 @@ python -m agentmail send \
 Read and reply from Claude:
 
 ```bash
-python -m agentmail inbox --agent claude --room ecommerce
-python -m agentmail mark --agent claude --message msg_xxx --status claimed
-python -m agentmail reply --agent claude --message msg_xxx --body "I will focus on architecture and data consistency risks."
+agentmail inbox --agent claude --room ecommerce
+agentmail mark --agent claude --message msg_xxx --status claimed
+agentmail reply --agent claude --message msg_xxx --body "I will focus on architecture and data consistency risks."
 ```
 
 Claim files before editing:
 
 ```bash
-python -m agentmail claim-scope \
+agentmail claim-scope \
   --agent codex \
   --room ecommerce \
   --path src/orders \
@@ -197,7 +208,7 @@ python -m agentmail claim-scope \
 Register an artifact:
 
 ```bash
-python -m agentmail artifact-add \
+agentmail artifact-add \
   --agent codex \
   --room ecommerce \
   --type log \
@@ -208,29 +219,29 @@ python -m agentmail artifact-add \
 Pause a room:
 
 ```bash
-python -m agentmail room-status --agent claude --room ecommerce --status paused
+agentmail room-status --agent claude --room ecommerce --status paused
 ```
 
 Start a background watcher for future inbox messages. It logs new messages and
 can run a command callback; OS notifications are off by default.
 
 ```bash
-python -m agentmail notify-start --agent claude --room ecommerce --workspace "$PWD"
-python -m agentmail notify-status --agent claude --room ecommerce --workspace "$PWD"
-python -m agentmail notify-stop --agent claude --room ecommerce --workspace "$PWD"
+agentmail notify-start --agent claude --room ecommerce --workspace "$PWD"
+agentmail notify-status --agent claude --room ecommerce --workspace "$PWD"
+agentmail notify-stop --agent claude --room ecommerce --workspace "$PWD"
 ```
 
 If you explicitly want an OS notification fallback, opt in:
 
 ```bash
-python -m agentmail notify-start --agent claude --room ecommerce --workspace "$PWD" --os-notify
+agentmail notify-start --agent claude --room ecommerce --workspace "$PWD" --os-notify
 ```
 
 Configure Claude channel delivery for a room:
 
 ```bash
-python -m agentmail channel-config --agent claude --room ecommerce --workspace "$PWD"
-python -m agentmail channel-status --workspace "$PWD"
+agentmail channel-config --agent claude --room ecommerce --workspace "$PWD"
+agentmail channel-status --workspace "$PWD"
 ```
 
 When the Claude plugin MCP server is launched with channel support, new inbox
@@ -244,7 +255,7 @@ is carried as tag attributes.
 The daemon exposes a tiny JSON RPC endpoint for adapters:
 
 ```bash
-python -m agentmail serve --host 127.0.0.1 --port 8765
+agentmail serve --host 127.0.0.1 --port 8765
 ```
 
 Health checks:
@@ -270,7 +281,7 @@ RPC shape:
 Run the stdio MCP server:
 
 ```bash
-python -m agentmail mcp
+agentmail mcp
 ```
 
 For Claude channel mode, set `AGENTMAIL_CHANNEL=1` in the MCP server

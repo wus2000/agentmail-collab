@@ -44,14 +44,14 @@ already-open Codex TUI. For Claude-to-Codex active delivery, start Codex through
 the AgentMail Remote TUI launcher:
 
 ```bash
-python -m agentmail launch-codex --room ecommerce --workspace "$PWD"
+agentmail launch-codex --room ecommerce --workspace "$PWD"
 ```
 
 If you are already in a normal Codex TUI, bootstrap a new AgentMail-aware Remote
 TUI:
 
 ```bash
-python -m agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
+agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
 ```
 
 The bridge uses the same AgentMail database and message status model. Claude
