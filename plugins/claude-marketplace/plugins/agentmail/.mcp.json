@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "agentmail": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/bin/agentmail-mcp",
+      "args": [],
+      "env": {
+        "AGENTMAIL_WORKSPACE": "${CLAUDE_PROJECT_DIR}",
+        "AGENTMAIL_CHANNEL": "1"
+      }
+    }
+  }
+}

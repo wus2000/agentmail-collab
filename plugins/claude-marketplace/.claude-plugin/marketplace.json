@@ -1,0 +1,16 @@
+{
+  "name": "agentmail-local",
+  "owner": {
+    "name": "AgentMail Contributors"
+  },
+  "description": "Local AgentMail plugins for Claude Code.",
+  "plugins": [
+    {
+      "name": "agentmail",
+      "source": "./plugins/agentmail",
+      "description": "Local peer mailbox for Claude Code and Codex collaboration.",
+      "license": "MIT",
+      "category": "Productivity"
+    }
+  ]
+}

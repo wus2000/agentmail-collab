@@ -1,0 +1,19 @@
+{
+  "name": "agentmail",
+  "version": "0.1.0",
+  "description": "Local peer mailbox for Claude Code and Codex collaboration.",
+  "author": {
+    "name": "AgentMail Contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "agentmail",
+    "claude-code",
+    "codex",
+    "mcp",
+    "collaboration"
+  ],
+  "skills": "./skills/",
+  "commands": "./commands/",
+  "mcpServers": "./.mcp.json"
+}

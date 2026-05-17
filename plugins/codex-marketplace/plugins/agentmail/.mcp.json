@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "agentmail": {
+      "command": "./bin/agentmail-mcp",
+      "args": [],
+      "cwd": ".",
+      "env_vars": [
+        "AGENTMAIL_DB",
+        "AGENTMAIL_WORKSPACE",
+        "CODEX_WORKSPACE_ROOT"
+      ],
+      "startup_timeout_sec": 10,
+      "tool_timeout_sec": 60
+    }
+  }
+}

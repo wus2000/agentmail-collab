@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGIN_ROOT_DEFAULT="${SCRIPT_DIR}/.."
+PLUGIN_ROOT_VALUE="${AGENTMAIL_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT:-${PLUGIN_ROOT_DEFAULT}}}}"
+PLUGIN_ROOT_RESOLVED="$(cd "${PLUGIN_ROOT_VALUE}" && pwd)"
+
+export PYTHONPATH="${PLUGIN_ROOT_RESOLVED}/vendor${PYTHONPATH:+:${PYTHONPATH}}"
+
+if [[ -z "${AGENTMAIL_WORKSPACE:-}" ]]; then
+  workspace="${AGENTMAIL_WORKSPACE:-${CLAUDE_PROJECT_DIR:-${CODEX_WORKSPACE_ROOT:-${PWD}}}}"
+  if [[ "${workspace}" != /* ]]; then
+    workspace="$(cd "${workspace}" 2>/dev/null && pwd || printf '%s' "${workspace}")"
+  fi
+  case "${workspace}" in
+    "${PLUGIN_ROOT_RESOLVED}"|"${PLUGIN_ROOT_RESOLVED}"/*|*/.claude/plugins/cache/*|*/.codex/plugins/cache/*)
+      ;;
+    *)
+      export AGENTMAIL_WORKSPACE="${workspace}"
+      ;;
+  esac
+fi
+
+if [[ -n "${AGENTMAIL_DB:-}" ]]; then
+  export AGENTMAIL_DB
+elif [[ -n "${AGENTMAIL_WORKSPACE:-}" ]]; then
+  export AGENTMAIL_WORKSPACE
+fi
+
+exec python3 -m agentmail "$@"

@@ -1,0 +1,20 @@
+{
+  "name": "agentmail-local",
+  "interface": {
+    "displayName": "AgentMail Local"
+  },
+  "plugins": [
+    {
+      "name": "agentmail",
+      "source": {
+        "source": "local",
+        "path": "./plugins/codex-marketplace/plugins/agentmail"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+---
+name: agentmail
+description: Use AgentMail when coordinating with a peer Claude Code or Codex session through a local mailbox.
+---
+
+# AgentMail
+
+Use AgentMail as a peer mailbox, not as a workflow engine. The only structured
+part is the envelope: sender, recipients, room, thread, status, refs, tags, and
+artifact metadata. Message `body` is opaque and must be preserved exactly.
+
+Prefer MCP tools when they are available:
+
+- `agentmail_join` when entering or refreshing a room.
+- `agentmail_peers` before assuming the other agent is online.
+- `agentmail_status` to inspect DB path, peers, inbox, active claims, and room state.
+- `agentmail_send` for free-form peer messages.
+- `agentmail_inbox` to check work addressed to this agent.
+- `agentmail_mark` with `seen`, `claimed`, `resolved`, or `cancelled`.
+- `agentmail_reply` to continue an existing thread.
+- `agentmail_note` for shared room notes.
+- `agentmail_claim_scope` before editing paths the peer may touch.
+- `agentmail_release_scope` when done.
+- `agentmail_add_artifact` for files, diffs, logs, screenshots, and notes.
+- `agentmail_timeline` when recovering context.
+- `agentmail_notify_start` to start a background inbox watcher.
+- `agentmail_notify_status` and `agentmail_notify_stop` to inspect or stop it.
+- `agentmail_codex_bridge_start`, `agentmail_codex_bridge_status`, and
+  `agentmail_codex_bridge_stop` for experimental Codex App Server active
+  wakeups.
+
+Startup pattern for Codex:
+
+1. Join the requested room as `codex` with `agent_kind: codex`.
+2. Always pass the current repository path as `workspace` on the first join.
+   AgentMail uses that path to select `<workspace>/.agentmail/agentmail.db`
+   for this MCP session.
+3. For ordinary Codex TUI sessions, read inbox explicitly. For active
+   Claude-to-Codex wakeups, ask the user to start Codex through
+   `python -m agentmail codex-bridge run ...` or start
+   `agentmail_codex_bridge_start` against an existing Codex App Server.
+4. List peers and read inbox before sending new work.
+5. Send natural-language content in `body`; do not wrap it in a custom protocol.
+
+If MCP tools are not loaded, tell the user to enable the AgentMail plugin or set
+`AGENTMAIL_DB` before launching both TUIs.

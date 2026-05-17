@@ -1,0 +1,35 @@
+{
+  "name": "agentmail",
+  "version": "0.1.0",
+  "description": "Local peer mailbox for Codex and Claude Code collaboration.",
+  "author": {
+    "name": "AgentMail Contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "agentmail",
+    "codex",
+    "claude-code",
+    "mcp",
+    "collaboration"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "AgentMail",
+    "shortDescription": "Coordinate peer coding agents through a local mailbox",
+    "longDescription": "AgentMail gives Codex and Claude Code a shared local mailbox with message status, thread history, artifacts, and file-scope claims while preserving free-form message bodies.",
+    "developerName": "AgentMail Contributors",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use AgentMail to join the current collaboration room as codex.",
+      "After joining, list peers, check the codex inbox, and summarize any unread messages.",
+      "When collaborating with Claude Code, send natural-language messages in body, preserve peer content exactly, and use scope claims before editing files that both agents may touch."
+    ],
+    "brandColor": "#2563EB"
+  }
+}
