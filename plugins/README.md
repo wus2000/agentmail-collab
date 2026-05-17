@@ -94,11 +94,13 @@ For Claude-to-Codex active wakeups, start Codex through the experimental App
 Server bridge instead of a normal TUI:
 
 ```bash
-python -m agentmail codex-bridge run \
-  --agent codex \
-  --room ecommerce \
-  --workspace "$PWD" \
-  --listen ws://127.0.0.1:4500
+python -m agentmail launch-codex --room ecommerce --workspace "$PWD"
+```
+
+From an already-open normal Codex TUI:
+
+```bash
+python -m agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
 ```
 
 This uses the same mailbox and message status model. The bridge delivers

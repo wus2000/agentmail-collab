@@ -5,6 +5,9 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shlex
+import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -46,6 +49,58 @@ def _read_body(args: argparse.Namespace) -> str:
 def _service(args: argparse.Namespace) -> AgentMailService:
     db_path = args.db or default_db_path(getattr(args, "workspace", None))
     return AgentMailService(AgentMailStore(db_path))
+
+
+def _workspace_path(workspace: str) -> Path:
+    path = Path(workspace).expanduser().resolve()
+    if not path.exists():
+        raise ValueError(f"workspace does not exist: {path}")
+    if not path.is_dir():
+        raise ValueError(f"workspace is not a directory: {path}")
+    return path
+
+
+def _auto_listen(preferred_port: int = 4500) -> str:
+    if _tcp_port_available(preferred_port):
+        return f"ws://127.0.0.1:{preferred_port}"
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return f"ws://127.0.0.1:{sock.getsockname()[1]}"
+
+
+def _tcp_port_available(port: int) -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock.bind(("127.0.0.1", port))
+        except OSError:
+            return False
+    return True
+
+
+def _launcher_listen(args: argparse.Namespace) -> str:
+    return args.listen or os.environ.get("AGENTMAIL_CODEX_APP_SERVER") or _auto_listen()
+
+
+def _agentmail_module_command(args: argparse.Namespace, subcommand: list[str]) -> str:
+    parts = [sys.executable, "-m", "agentmail"]
+    if args.db:
+        parts.extend(["--db", args.db])
+    parts.extend(subcommand)
+    package_parent = Path(__file__).resolve().parent.parent
+    return f"PYTHONPATH={shlex.quote(str(package_parent))}${{PYTHONPATH:+:$PYTHONPATH}} {shlex.join(parts)}"
+
+
+def _applescript_quote(value: str) -> str:
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def _open_terminal(command: str) -> bool:
+    if sys.platform != "darwin":
+        return False
+    script = f'tell application "Terminal" to do script {_applescript_quote(command)}'
+    completed = subprocess.run(["osascript", "-e", script], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return completed.returncode == 0
 
 
 def _emit(payload: Any, as_json: bool) -> None:
@@ -359,6 +414,115 @@ def cmd_codex_bridge_run(args: argparse.Namespace) -> Any:
             stop_bridge(db_path, args.room, args.agent)
 
 
+def cmd_launch_codex(args: argparse.Namespace) -> Any:
+    workspace = _workspace_path(args.workspace)
+    listen = _launcher_listen(args)
+    service = _service(args)
+    joined = service.join(
+        args.agent,
+        "codex",
+        args.room,
+        str(workspace),
+        ["peer-mailbox", "code-collaboration", "active-wakeup"],
+    )
+    run_args = argparse.Namespace(
+        **{
+            **vars(args),
+            "workspace": str(workspace),
+            "listen": listen,
+            "no_app_server": False,
+        }
+    )
+    result = cmd_codex_bridge_run(run_args)
+    return {"joined": joined, "listen": listen, **result}
+
+
+def cmd_bootstrap_codex(args: argparse.Namespace) -> Any:
+    workspace = _workspace_path(args.workspace)
+    listen = _launcher_listen(args)
+    service = _service(args)
+    joined = service.join(
+        args.agent,
+        "codex",
+        args.room,
+        str(workspace),
+        ["peer-mailbox", "code-collaboration", "active-wakeup"],
+    )
+    launch_command = _agentmail_module_command(
+        args,
+        [
+            "launch-codex",
+            "--agent",
+            args.agent,
+            "--room",
+            args.room,
+            "--workspace",
+            str(workspace),
+            "--listen",
+            listen,
+            "--interval",
+            str(args.interval),
+            "--mode",
+            args.mode,
+        ],
+    )
+    if args.thread_id:
+        launch_command += " " + shlex.join(["--thread-id", args.thread_id])
+    if args.include_existing:
+        launch_command += " --include-existing"
+    if args.keep_running:
+        launch_command += " --keep-running"
+    command = f"cd {shlex.quote(str(workspace))} && {launch_command}"
+    opened = False if args.dry_run else (_open_terminal(command) if args.open_terminal else False)
+    return {
+        "joined": joined,
+        "workspace": str(workspace),
+        "db_path": str(service.store.db_path),
+        "listen": listen,
+        "opened_terminal": opened,
+        "command": command,
+        "next_steps": [
+            "Use the newly opened Codex Remote TUI for AgentMail-aware collaboration." if opened else "Run the command shown above in a terminal to start the AgentMail-aware Codex Remote TUI.",
+            f"In Claude Code, start or reload AgentMail and join room `{args.room}` as `claude`.",
+        ],
+    }
+
+
+def cmd_doctor(args: argparse.Namespace) -> Any:
+    from agentmail.codex_bridge import bridge_status
+
+    workspace = Path(args.workspace).expanduser().resolve()
+    service = _service(args)
+    db_path = service.store.db_path
+    peers = service.peers(args.room)
+    channel = read_channel_config(db_path)
+    bridge = bridge_status(db_path, args.room, "codex")
+    checks = [
+        {"name": "workspace_exists", "ok": workspace.exists() and workspace.is_dir(), "detail": str(workspace)},
+        {"name": "database_exists", "ok": db_path.exists(), "detail": str(db_path)},
+        {"name": "codex_cli", "ok": shutil.which("codex") is not None, "detail": shutil.which("codex") or ""},
+        {"name": "claude_cli", "ok": shutil.which("claude") is not None, "detail": shutil.which("claude") or ""},
+        {
+            "name": "claude_channel_configured",
+            "ok": bool(channel and channel.get("enabled") and channel.get("room_name") == args.room),
+            "detail": channel or {},
+        },
+        {
+            "name": "codex_bridge_running",
+            "ok": bool(bridge.get("running") and bridge.get("app_server_running")),
+            "detail": bridge,
+        },
+    ]
+    return {
+        "workspace": str(workspace),
+        "db_path": str(db_path),
+        "room": args.room,
+        "peers": peers,
+        "checks": checks,
+        "ok": all(check["ok"] for check in checks[:4]),
+    }
+
+
 def cmd_serve(args: argparse.Namespace) -> Any:
     from agentmail.daemon import run_server
 
@@ -547,6 +711,29 @@ def build_parser() -> argparse.ArgumentParser:
     channel_status.add_argument("--workspace", default=".")
     channel_status.set_defaults(func=cmd_channel_status)
 
+    launch_codex = sub.add_parser(
+        "launch-codex",
+        help="Join AgentMail and run an AgentMail-aware Codex Remote TUI.",
+    )
+    _add_codex_launcher_args(launch_codex)
+    launch_codex.add_argument("--keep-running", action="store_true", help="Leave the bridge and managed app-server running when Codex exits.")
+    launch_codex.set_defaults(func=cmd_launch_codex)
+
+    bootstrap_codex = sub.add_parser(
+        "bootstrap-codex",
+        help="Prepare the current workspace and open an AgentMail-aware Codex Remote TUI.",
+    )
+    _add_codex_launcher_args(bootstrap_codex)
+    bootstrap_codex.add_argument("--open-terminal", action=argparse.BooleanOptionalAction, default=True)
+    bootstrap_codex.add_argument("--keep-running", action="store_true", help="Leave the bridge and managed app-server running when Codex exits.")
+    bootstrap_codex.add_argument("--dry-run", action="store_true", help="Print the launch command without opening a terminal.")
+    bootstrap_codex.set_defaults(func=cmd_bootstrap_codex)
+
+    doctor = sub.add_parser("doctor", help="Check local AgentMail collaboration state for a workspace.")
+    doctor.add_argument("--room", default="default")
+    doctor.add_argument("--workspace", default=".")
+    doctor.set_defaults(func=cmd_doctor)
+
     codex_bridge = sub.add_parser("codex-bridge", help="Experimental Codex App Server bridge.")
     codex_bridge_sub = codex_bridge.add_subparsers(dest="codex_bridge_command", required=True)
 
@@ -606,6 +793,17 @@ def _add_codex_bridge_common_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--listen", default=os.environ.get("AGENTMAIL_CODEX_APP_SERVER", "ws://127.0.0.1:4500"))
     parser.add_argument("--thread-id", default="", help="Codex App Server thread id. If omitted, one loaded thread is auto-selected.")
     parser.add_argument("--mode", default="turn-start", choices=["turn-start", "inject"])
+
+
+def _add_codex_launcher_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--agent", default="codex")
+    parser.add_argument("--room", default="default")
+    parser.add_argument("--workspace", default=".")
+    parser.add_argument("--listen", default="", help="Codex App Server websocket URL. Defaults to an available localhost port.")
+    parser.add_argument("--thread-id", default="", help="Codex App Server thread id. If omitted, one loaded thread is auto-selected.")
+    parser.add_argument("--mode", default="turn-start", choices=["turn-start", "inject"])
+    parser.add_argument("--interval", type=float, default=2.0)
+    parser.add_argument("--include-existing", action="store_true")
 
 
 def main(argv: list[str] | None = None) -> int:

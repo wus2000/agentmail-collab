@@ -41,14 +41,17 @@ for deterministic testing.
 
 The normal Codex plugin/MCP path does not inject inbound peer messages into an
 already-open Codex TUI. For Claude-to-Codex active delivery, start Codex through
-the AgentMail App Server bridge:
+the AgentMail Remote TUI launcher:
 
 ```bash
-python -m agentmail codex-bridge run \
-  --agent codex \
-  --room ecommerce \
-  --workspace "$PWD" \
-  --listen ws://127.0.0.1:4500
+python -m agentmail launch-codex --room ecommerce --workspace "$PWD"
+```
+
+If you are already in a normal Codex TUI, bootstrap a new AgentMail-aware Remote
+TUI:
+
+```bash
+python -m agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
 ```
 
 The bridge uses the same AgentMail database and message status model. Claude

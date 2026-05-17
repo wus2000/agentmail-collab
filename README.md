@@ -111,14 +111,27 @@ AgentMail has one mailbox and two wakeup adapters:
   This requires Codex to run through Remote TUI mode; a normal already-opened
   `codex` TUI cannot currently be injected through the plugin/MCP layer.
 
-Start a managed Codex Remote TUI session:
+For the natural "start a collaboration-ready Codex" path, launch Codex through
+AgentMail from the project directory:
 
 ```bash
-python -m agentmail codex-bridge run \
-  --agent codex \
-  --room ecommerce \
-  --workspace "$PWD" \
-  --listen ws://127.0.0.1:4500
+python -m agentmail launch-codex --room ecommerce --workspace "$PWD"
+```
+
+If you already opened a normal Codex TUI, ask it to run:
+
+```bash
+python -m agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
+```
+
+`bootstrap-codex` prepares the workspace and opens a new AgentMail-aware Codex
+Remote TUI window. Continue the collaboration in that new Codex window; the
+original normal TUI still cannot be injected directly.
+
+You can inspect the local setup at any time:
+
+```bash
+python -m agentmail doctor --room ecommerce --workspace "$PWD"
 ```
 
 Or run the pieces manually:

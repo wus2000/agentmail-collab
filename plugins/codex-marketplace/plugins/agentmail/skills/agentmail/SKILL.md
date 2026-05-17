@@ -36,9 +36,11 @@ Startup pattern for Codex:
    AgentMail uses that path to select `<workspace>/.agentmail/agentmail.db`
    for this MCP session.
 3. For ordinary Codex TUI sessions, read inbox explicitly. For active
-   Claude-to-Codex wakeups, ask the user to start Codex through
-   `python -m agentmail codex-bridge run ...` or start
-   `agentmail_codex_bridge_start` against an existing Codex App Server.
+   Claude-to-Codex wakeups, prefer
+   `python -m agentmail launch-codex --room <room> --workspace "$PWD"`.
+   If you are already inside a normal Codex TUI, use
+   `python -m agentmail bootstrap-codex --room <room> --workspace "$PWD"` to
+   open a new AgentMail-aware Remote TUI.
 4. List peers and read inbox before sending new work.
 5. Send natural-language content in `body`; do not wrap it in a custom protocol.
 

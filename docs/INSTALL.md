@@ -83,21 +83,35 @@ Codex plugins and MCP servers do not currently provide a Claude-channel-like
 way to inject inbound messages into an already-open normal Codex TUI. AgentMail
 therefore uses Codex App Server as the experimental active wakeup path.
 
-Start Codex through AgentMail's managed Remote TUI wrapper:
+Start Codex through AgentMail's managed Remote TUI launcher:
 
 ```bash
-python -m agentmail codex-bridge run \
-  --agent codex \
-  --room ecommerce \
-  --workspace "$PWD" \
-  --listen ws://127.0.0.1:4500
+python -m agentmail launch-codex --room ecommerce --workspace "$PWD"
 ```
 
-That command starts:
+If you already opened a normal Codex TUI, ask Codex to run this bootstrap
+command:
 
-- `codex app-server --listen ws://127.0.0.1:4500`
+```bash
+python -m agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
+```
+
+The bootstrap command joins the room, chooses an available local App Server
+port, and opens a new AgentMail-aware Codex Remote TUI window. Continue the
+collaboration in that new window; the original normal Codex TUI still cannot
+be injected directly.
+
+Check the local setup:
+
+```bash
+python -m agentmail doctor --room ecommerce --workspace "$PWD"
+```
+
+The launcher starts:
+
+- `codex app-server`
 - an AgentMail bridge loop for `codex` in room `ecommerce`
-- `codex --remote ws://127.0.0.1:4500`
+- `codex --remote ...`
 
 To manage the pieces yourself:
 
@@ -132,7 +146,7 @@ Expected result:
 - Claude receives the message in the running Claude Code session.
 - Claude replies through `agentmail_reply`.
 - Codex can read the reply in its AgentMail inbox.
-- If Codex was started through `codex-bridge run`, Claude-origin messages can
+- If Codex was started through `launch-codex` or `bootstrap-codex`, Claude-origin messages can
   also start a Codex turn through Codex App Server.
 
 ## Notes

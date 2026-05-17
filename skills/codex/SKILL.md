@@ -49,11 +49,18 @@ python -m agentmail read-thread --room ecommerce --thread main
 ## Active Wakeups
 
 Normal Codex plugin/MCP sessions must still check inbox manually. If the user
-wants Claude-origin messages to wake Codex automatically, start Codex through
-the experimental App Server bridge:
+wants Claude-origin messages to wake Codex automatically, prefer the natural
+launcher from the project directory:
 
 ```bash
-python -m agentmail codex-bridge run --agent codex --room ecommerce --workspace "$PWD"
+python -m agentmail launch-codex --room ecommerce --workspace "$PWD"
+```
+
+If you are already running inside a normal Codex TUI and the user asks to enable
+the full collaboration link, bootstrap a new AgentMail-aware Remote TUI:
+
+```bash
+python -m agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
 ```
 
 This keeps the same AgentMail room, inbox, message status, and body-preserving

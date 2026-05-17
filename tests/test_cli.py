@@ -213,6 +213,52 @@ class AgentMailCliTests(unittest.TestCase):
             _, inbox_text = self.run_cli(db, "inbox", "--agent", "claude", "--room", "shop")
             self.assertEqual(json.loads(inbox_text)[0]["body"], exact_body)
 
+    def test_bootstrap_codex_prepares_workspace_and_prints_launch_command(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            db = Path(workspace) / ".agentmail" / "agentmail.db"
+
+            rc, text = self.run_cli(
+                db,
+                "bootstrap-codex",
+                "--agent",
+                "codex",
+                "--room",
+                "shop",
+                "--workspace",
+                workspace,
+                "--listen",
+                "ws://127.0.0.1:4999",
+                "--dry-run",
+                "--no-open-terminal",
+            )
+
+            self.assertEqual(rc, 0)
+            result = json.loads(text)
+            self.assertFalse(result["opened_terminal"])
+            self.assertEqual(result["listen"], "ws://127.0.0.1:4999")
+            self.assertIn("launch-codex", result["command"])
+            self.assertIn("--room shop", result["command"])
+            self.assertEqual(result["joined"]["agent"]["name"], "codex")
+
+            rc, peers_text = self.run_cli(db, "peers", "--room", "shop")
+            self.assertEqual(rc, 0)
+            self.assertEqual(json.loads(peers_text)[0]["name"], "codex")
+
+    def test_doctor_reports_workspace_database_and_peers(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            db = Path(workspace) / ".agentmail" / "agentmail.db"
+            self.run_cli(db, "start", "--agent", "claude", "--kind", "claude", "--room", "shop", "--workspace", workspace)
+
+            rc, text = self.run_cli(db, "doctor", "--room", "shop", "--workspace", workspace)
+
+            self.assertEqual(rc, 0)
+            result = json.loads(text)
+            self.assertEqual(result["db_path"], str(db))
+            self.assertEqual(result["peers"][0]["name"], "claude")
+            checks = {check["name"]: check for check in result["checks"]}
+            self.assertTrue(checks["workspace_exists"]["ok"])
+            self.assertTrue(checks["database_exists"]["ok"])
+
 
 if __name__ == "__main__":
     unittest.main()

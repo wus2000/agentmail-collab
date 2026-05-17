@@ -55,7 +55,7 @@ Useful assertions:
 Start Codex through the experimental bridge:
 
 ```bash
-python -m agentmail codex-bridge run --agent codex --room ecommerce --workspace "$PWD"
+python -m agentmail launch-codex --room ecommerce --workspace "$PWD"
 ```
 
 Then send a message from Claude to Codex. Expected result:

@@ -55,11 +55,14 @@ experimental AgentMail Codex bridge uses Codex App Server instead.
 Start a managed Remote TUI session:
 
 ```bash
-python -m agentmail codex-bridge run \
-  --agent codex \
-  --room ecommerce \
-  --workspace "$PWD" \
-  --listen ws://127.0.0.1:4500
+python -m agentmail launch-codex --room ecommerce --workspace "$PWD"
+```
+
+If you are already in a normal Codex TUI, use the bootstrap wrapper to open a
+new AgentMail-aware Remote TUI:
+
+```bash
+python -m agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
 ```
 
 Or connect to a server you started yourself:

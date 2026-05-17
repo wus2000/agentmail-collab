@@ -60,11 +60,14 @@ Normal Codex TUI sessions cannot currently be injected through the AgentMail
 plugin/MCP server. Use the experimental Codex App Server bridge:
 
 ```bash
-python -m agentmail codex-bridge run \
-  --agent codex \
-  --room ecommerce \
-  --workspace "$PWD" \
-  --listen ws://127.0.0.1:4500
+python -m agentmail launch-codex --room ecommerce --workspace "$PWD"
+```
+
+From an already-open normal Codex TUI, bootstrap a new AgentMail-aware Remote
+TUI instead:
+
+```bash
+python -m agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
 ```
 
 Check bridge status:
