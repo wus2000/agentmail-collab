@@ -43,7 +43,10 @@ Startup pattern for Claude Code:
 
 Codex can only be actively woken when it was started through the experimental
 AgentMail Codex App Server bridge. Otherwise, Codex must read its inbox on the
-next turn.
+next turn. Prefer asking the user or Codex to start it with
+`agentmail launch-codex --room <room> --workspace "$PWD"`; the launcher forwards
+`AGENTMAIL_DB` and `AGENTMAIL_WORKSPACE` so Codex MCP tools and the bridge share
+one database.
 
 If MCP tools are not loaded, use the bundled CLI:
 

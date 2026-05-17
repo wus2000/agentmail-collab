@@ -120,6 +120,29 @@ def _codex_remote_command(args: argparse.Namespace) -> list[str]:
     return cmd
 
 
+def _codex_remote_env(args: argparse.Namespace, db_path: str | os.PathLike[str]) -> dict[str, str]:
+    env = os.environ.copy()
+    env["AGENTMAIL_DB"] = str(Path(db_path).expanduser())
+    workspace = getattr(args, "workspace", "")
+    if workspace:
+        workspace_path = str(Path(workspace).expanduser().resolve())
+        env["AGENTMAIL_WORKSPACE"] = workspace_path
+        env["CODEX_WORKSPACE_ROOT"] = workspace_path
+    env["AGENTMAIL_ROOM"] = getattr(args, "room", "")
+    env["AGENTMAIL_AGENT"] = getattr(args, "agent", "")
+    return env
+
+
+def _codex_remote_cwd(args: argparse.Namespace) -> str | None:
+    workspace = getattr(args, "workspace", "")
+    if not workspace:
+        return None
+    workspace_path = Path(workspace).expanduser().resolve()
+    if not workspace_path.is_dir():
+        return None
+    return str(workspace_path)
+
+
 def _emit(payload: Any, as_json: bool) -> None:
     if as_json:
         print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
@@ -420,7 +443,7 @@ def cmd_codex_bridge_run(args: argparse.Namespace) -> Any:
     cmd = _codex_remote_command(args)
     register_foreground_run(db_path, args.room, args.agent)
     try:
-        process = subprocess.Popen(cmd)
+        process = subprocess.Popen(cmd, cwd=_codex_remote_cwd(args), env=_codex_remote_env(args, db_path))
         register_foreground_run(db_path, args.room, args.agent, remote_pid=process.pid)
         return {"codex_exit_code": process.wait()}
     finally:

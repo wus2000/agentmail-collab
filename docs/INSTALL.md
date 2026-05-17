@@ -108,6 +108,10 @@ Resume the most recent Codex session instead of starting a fresh one:
 agentmail launch-codex --room ecommerce --workspace "$PWD" --resume last
 ```
 
+The launcher forwards `AGENTMAIL_DB` and `AGENTMAIL_WORKSPACE` to the spawned
+Codex process, so Codex's AgentMail MCP tools use the same workspace database as
+the active bridge.
+
 If you already opened a normal Codex TUI, ask Codex to run this bootstrap
 command:
 

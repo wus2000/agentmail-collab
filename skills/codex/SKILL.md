@@ -62,6 +62,10 @@ To resume an existing Codex session through the active wakeup path:
 agentmail launch-codex --room ecommerce --workspace "$PWD" --resume last
 ```
 
+The launcher forwards `AGENTMAIL_DB` and `AGENTMAIL_WORKSPACE` to the spawned
+Codex process, so AgentMail MCP tools should use the same workspace database as
+the bridge.
+
 If you are already running inside a normal Codex TUI and the user asks to enable
 the full collaboration link, bootstrap a new AgentMail-aware Remote TUI:
 

@@ -321,6 +321,13 @@ class AgentMailCliTests(unittest.TestCase):
                 codex_popen.call_args.args[0],
                 ["codex", "resume", "--last", "--remote", "ws://127.0.0.1:4999", "--cd", str(Path(workspace).resolve())],
             )
+            self.assertEqual(codex_popen.call_args.kwargs["cwd"], str(Path(workspace).resolve()))
+            codex_env = codex_popen.call_args.kwargs["env"]
+            self.assertEqual(codex_env["AGENTMAIL_DB"], str(db))
+            self.assertEqual(codex_env["AGENTMAIL_WORKSPACE"], str(Path(workspace).resolve()))
+            self.assertEqual(codex_env["CODEX_WORKSPACE_ROOT"], str(Path(workspace).resolve()))
+            self.assertEqual(codex_env["AGENTMAIL_ROOM"], "shop")
+            self.assertEqual(codex_env["AGENTMAIL_AGENT"], "codex")
             self.assertEqual(json.loads(text)["codex_exit_code"], 0)
 
     def test_doctor_reports_workspace_database_and_peers(self) -> None:

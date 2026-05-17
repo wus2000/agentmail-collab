@@ -39,7 +39,8 @@ Startup pattern for Codex:
    Claude-to-Codex wakeups, prefer
    `agentmail launch-codex --room <room> --workspace "$PWD"`.
    Use `--resume last` or `--resume <session-id>` when the user wants to resume
-   a previous Codex conversation.
+   a previous Codex conversation. The launcher forwards `AGENTMAIL_DB` and
+   `AGENTMAIL_WORKSPACE` so MCP tools and the bridge share one database.
    If you are already inside a normal Codex TUI, use
    `agentmail bootstrap-codex --room <room> --workspace "$PWD"` to
    open a new AgentMail-aware Remote TUI.
