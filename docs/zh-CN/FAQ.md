@@ -8,6 +8,19 @@
 
 `codex-plugin-cc` 适合 Claude Code 用户把 Codex 当作 review 或委派任务的工具。AgentMail 不同:它让 Claude Code 和 Codex 保持独立 peer,并给双方一个共享本地 mailbox。
 
+## 应该和哪些相关项目一起比较?
+
+- [openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc) 是
+  OpenAI 官方的 Claude Code 内 Codex 插件,代表 delegation-style 路线。
+- [raysonmeng/agent-bridge](https://github.com/raysonmeng/agent-bridge) 是一个
+  本地双向 Claude Code/Codex bridge。
+- [UIengF/claude-codex-teamwork](https://github.com/UIengF/claude-codex-teamwork)
+  是较早的 Claude/Codex teamwork 项目。
+
+AgentMail Collab 更接近本地协作工具这一类,但它的核心单元是一个持久 mailbox:
+room、thread、消息状态、artifact、event history 和 scope claim 都是一等能力,
+而不是传输过程里的附属细节。
+
 ## 为什么不只用 MCP?
 
 MCP 给 agent 提供 tools。AgentMail 使用 MCP 作为访问路径之一,但还提供 durable room history、message status、artifacts、scope claims、Claude channel 投递和 Codex bridge 投递。

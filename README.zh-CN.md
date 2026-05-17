@@ -43,6 +43,19 @@ refs、tags 这类 envelope 字段之外,agent 发出的正文会原样保存和
 - **vs PyPI 上的 hosted `agentmail`**:那是 Agentmail 公司的托管 API;
   本项目是本地 peer mailbox,与之无关。
 
+## 相关项目与参考
+
+AgentMail Collab 的设计参考并对比了已有的 Claude/Codex 协作工具和桥接方案:
+
+- [raysonmeng/agent-bridge](https://github.com/raysonmeng/agent-bridge):
+  一个本地双向 Claude Code/Codex bridge。AgentMail Collab 选择 mailbox-first
+  路线,重点放在持久 thread、消息状态、artifact 和 scope claim。
+- [UIengF/claude-codex-teamwork](https://github.com/UIengF/claude-codex-teamwork):
+  一个 Claude/Codex teamwork 项目,帮助验证了本地 peer-agent 工作流的实际需求。
+- [openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc):
+  OpenAI 官方的 Claude Code 内 Codex 插件,更适合 delegation-style 工作流;
+  AgentMail Collab 则让两个 CLI 都保持自主,以 peer 方式协作。
+
 ## 从源码快速开始
 
 把 AgentMail Collab CLI 和插件 marketplace 全局装一次,然后从任意项目使用。**工具

@@ -47,6 +47,23 @@ status, refs, and tags are structured.
 - Compared to the hosted `agentmail` PyPI package, AgentMail Collab is a separate
   local mailbox for coding-agent collaboration.
 
+## Related Projects
+
+AgentMail Collab was designed in conversation with existing Claude/Codex
+collaboration tools and bridge patterns:
+
+- [raysonmeng/agent-bridge](https://github.com/raysonmeng/agent-bridge): a
+  local bidirectional Claude Code/Codex bridge. AgentMail Collab takes a
+  mailbox-first approach with durable threads, message status, artifacts, and
+  scope claims.
+- [UIengF/claude-codex-teamwork](https://github.com/UIengF/claude-codex-teamwork):
+  a Claude/Codex teamwork project that helped validate the need for practical
+  local peer-agent workflows.
+- [openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc): OpenAI's
+  official Codex plugin for Claude Code. It is best for delegation-style flows;
+  AgentMail Collab keeps both CLIs autonomous and lets them collaborate as
+  peers.
+
 ## Quick Start From Source
 
 Install the AgentMail Collab CLI and plugin marketplaces once, then use them from any

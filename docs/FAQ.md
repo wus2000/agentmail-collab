@@ -12,6 +12,20 @@ review, and negotiate.
 a tool for review or delegated work. AgentMail is different: it keeps Claude
 Code and Codex as independent peers and gives them a shared local mailbox.
 
+## What related projects should I compare with?
+
+- [openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc) is the
+  official delegation-style Codex plugin for Claude Code.
+- [raysonmeng/agent-bridge](https://github.com/raysonmeng/agent-bridge) is a
+  local bidirectional Claude Code/Codex bridge.
+- [UIengF/claude-codex-teamwork](https://github.com/UIengF/claude-codex-teamwork)
+  is an earlier Claude/Codex teamwork project.
+
+AgentMail Collab is closest to the local collaboration category, but its core
+unit is a durable mailbox: rooms, threads, message status, artifacts, event
+history, and scope claims are first-class instead of being incidental transport
+details.
+
 ## Why not just use MCP?
 
 MCP gives an agent tools. AgentMail uses MCP as one access path, but also adds
