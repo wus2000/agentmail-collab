@@ -1,6 +1,6 @@
 ---
 name: agentmail-codex
-description: Use when Codex should collaborate as a peer with Claude Code or another coding agent through AgentMail.
+description: Use AgentMail any time Codex is asked to coordinate with Claude Code, another coding agent, or a teammate session in the same workspace. Triggers include sending messages to a peer agent, checking inbox/replies, claiming file scope before editing, marking peer work seen/claimed/resolved, registering long outputs as artifacts, or any mention of "Claude", "the other agent", "peer", "teammate", or "send a message to X". Also trigger when Claude's independent judgment would improve correctness, architecture, scope, or review quality. Do NOT use for solo Codex work, chats with the user only, or when no peer agent is running in the workspace.
 ---
 
 # AgentMail for Codex
@@ -12,6 +12,22 @@ workflow-free: decide how to collaborate in natural language.
 Only the envelope fields are structured. The body is opaque free-form content:
 AgentMail stores and delivers it without parsing, trimming, templating, or
 classifying it.
+
+## When To Use This Skill
+
+Trigger AgentMail when:
+
+- The user mentions Claude, a peer agent, a teammate session, or "the other CLI".
+- The user wants to send/receive a message between agents in the same repo.
+- Claude's independent review would catch correctness, architecture, or scope risks before Codex commits.
+- Before editing files that another agent may also touch (claim file scope).
+- After producing a long diff, log, screenshot, or generated file (register as artifact).
+
+Do NOT use this skill when:
+
+- The user is talking only to Codex with no peer agent involved.
+- No AgentMail room or peer is online (check `agentmail_peers` first).
+- Every small implementation detail does not need Claude's input — keep collaboration peer-level, not micromanaged.
 
 ## Start
 

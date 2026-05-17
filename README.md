@@ -1,129 +1,126 @@
-# AgentMail
+# AgentMail Collab
 
-AgentMail is a local peer-to-peer mailbox for coding agents such as Claude Code
-and Codex. It is intentionally a thin collaboration layer: agents decide how to
-plan, review, implement, and negotiate in natural language; AgentMail only
-provides reliable messaging, status, shared thread history, artifacts, and
-file-scope claims.
+**AgentMail Collab is a local peer mailbox, not an agent orchestrator.**
 
-AgentMail treats message `body` as an opaque payload. Apart from small envelope
-fields such as sender, recipients, room, thread, status, refs, and tags, it does
-not parse, trim, rewrite, template, validate, or classify message content. What
-an agent sends in `body` is what the peer receives. For exact multi-line content
-over the CLI, prefer `--body-file` or stdin.
+Other Claude/Codex bridges turn one CLI into a tool of the other. AgentMail
+keeps both CLIs autonomous and lets them talk like peers through a shared local
+SQLite mailbox: same workspace, same room, same thread, same opaque message
+bodies, with Claude Code channels and a Codex App Server bridge as transport
+adapters.
 
-## Goals
+AgentMail Collab is unrelated to the hosted `agentmail` PyPI package. We ship as
+`agentmail-collab` to avoid confusion.
 
-- Let Claude Code and Codex run side by side in the same codebase.
-- Keep both agents as peers, not as parent/child tools.
-- Persist messages and state across TUI restarts.
-- Push inbox messages into a running Claude Code session through Claude channels.
-- Experimentally push Claude-origin inbox messages into a Codex Remote TUI
-  session through Codex App Server.
-- Show whether a message was delivered, seen, claimed, replied to, or resolved.
-- Allow agents to reference files, diffs, logs, screenshots, and notes.
-- Register artifacts as first-class thread objects.
-- Reduce accidental double writes with lightweight path claims.
-- Pause, reopen, or close a room without deleting history.
-- Keep the core workflow-free and extensible through adapters.
+[中文 README](README.zh-CN.md)
 
-## Non-Goals
+## What You Get
 
-- AgentMail does not decide who plans, implements, or reviews.
-- AgentMail does not execute shell commands from messages.
-- AgentMail does not require Claude or Codex to be subordinate to each other.
-- AgentMail does not depend on this repository's existing teammate scripts.
+- A durable local mailbox for Claude Code, Codex, and other coding agents.
+- Rooms, threads, message status, artifacts, event history, and file-scope
+  claims backed by SQLite under your workspace.
+- Claude Code active wakeups through Claude channels.
+- Experimental Claude-to-Codex active wakeups through Codex App Server and
+  Remote TUI mode.
+- Plugin packages for both Claude Code and Codex, plus a normal `agentmail`
+  CLI for scripting and local debugging.
 
-## Layout
+Message bodies are opaque. AgentMail stores and delivers the body exactly as an
+agent sends it; only envelope fields such as sender, recipients, room, thread,
+status, refs, and tags are structured.
 
-```text
-agentmail/
-  .claude-plugin/marketplace.json  Claude Code marketplace entrypoint
-  .agents/plugins/marketplace.json Codex marketplace entrypoint
-  pyproject.toml   Python package metadata
-  models.py       Generic domain models
-  store.py        SQLite persistence and event log
-  service.py      Workflow-free application API
-  cli.py          `agentmail ...`
-  codex_bridge.py Experimental Codex App Server bridge
-  daemon.py       Local JSON RPC daemon
-  mcp_server.py   Minimal stdio MCP server and Claude channel
-  notify.py       Background watcher and channel config helpers
-  skills/         Claude/Codex usage instructions
-  plugins/        Codex and Claude Code local plugin marketplaces
-  docs/           Install, test, and release guides
-  scripts/        Validation and local install helpers
-  tests/          Unit and integration tests
-```
+## Requirements
 
-## Install As Plugins
+- Claude Code installed and authenticated.
+- Codex installed and authenticated.
+- Python 3.10 or newer.
+- macOS or Linux for the best-tested local workflow. Windows users should use
+  WSL for now.
 
-AgentMail is packaged so this `agentmail/` directory can be used as the
-marketplace root for both Claude Code and Codex.
+## Compared To
 
-Install the CLI command first:
+- Compared to `openai/codex-plugin-cc`, AgentMail is peer-to-peer instead of
+  delegation from Claude Code into Codex.
+- Compared to one-way Claude/Codex config bridges, AgentMail persists actual
+  messages, status, artifacts, and scope claims.
+- Compared to network agent protocols such as A2A, AgentMail is local-first and
+  deliberately light on protocol.
+- Compared to the hosted `agentmail` PyPI package, AgentMail Collab is a separate
+  local mailbox for coding-agent collaboration.
+
+## Quick Start From Source
+
+Install the AgentMail Collab CLI and plugin marketplaces once, then use them from any
+project. The tooling can be global; collaboration state stays local to each
+workspace under `<project>/.agentmail/`.
+
+Clone the repository:
 
 ```bash
-cd agentmail
+git clone https://github.com/wus2000/agentmail-collab agentmail-collab
+cd agentmail-collab
+```
+
+Install the CLI from this checkout:
+
+```bash
 python3 -m pip install -e .
 agentmail --help
 ```
 
-The docs use `agentmail ...` for normal usage. When hacking directly on the
-source tree before installing the CLI, `python -m agentmail ...` remains an
-equivalent fallback.
-
-Claude Code:
+Install the Claude Code plugin marketplace from the repository root. User scope
+is the recommended long-term install because it is available across projects:
 
 ```bash
 claude plugin validate .
-claude plugin marketplace add "$(pwd)" --scope local
-claude plugin install agentmail@agentmail-local --scope local
+claude plugin marketplace add "$(pwd)" --scope user
+claude plugin install agentmail@agentmail-collab --scope user
 ```
 
-For Claude channel wakeups, start Claude Code with the development-channel
-bypass while channels are in research preview:
+Use `--scope local` instead when you want a one-project development install.
+
+Install the Codex plugin marketplace from the same repository root:
 
 ```bash
-claude --dangerously-load-development-channels plugin:agentmail@agentmail-local
+codex plugin marketplace add "$(pwd)"
 ```
 
-Then join a room inside Claude Code:
+Restart Codex, open `/plugins`, choose `AgentMail Collab`, and install
+`agentmail`.
+
+Now move to the project where you want Claude Code and Codex to collaborate:
+
+```bash
+cd /path/to/your-project
+```
+
+Start Claude Code with channel support while Claude channels are in research
+preview:
+
+```bash
+claude --dangerously-load-development-channels plugin:agentmail@agentmail-collab
+```
+
+Then join a room inside Claude Code. Room and agent names are yours to choose;
+the first agent to join creates the room:
+
+```text
+/agentmail:start <room> <agent>
+```
+
+For example:
 
 ```text
 /agentmail:start ecommerce claude
 ```
 
-Codex:
-
-```bash
-cd agentmail
-codex plugin marketplace add "$(pwd)"
-```
-
-Restart Codex, install `agentmail` from the `AgentMail Local` marketplace, then
-join the same room:
+If you only need explicit mailbox access from a normal Codex TUI, ask Codex:
 
 ```text
 Use @agentmail. Join room ecommerce as codex, list peers, and check my inbox.
 ```
 
-See `docs/INSTALL.md` for the full install and smoke-test flow.
-
-## Active Wakeups
-
-AgentMail has one mailbox and two wakeup adapters:
-
-- **Claude Code**: the AgentMail MCP server emits
-  `notifications/claude/channel`, and Claude Code injects the message into the
-  running Claude session. This is the primary Claude wakeup path.
-- **Codex**: the experimental bridge connects to Codex App Server and delivers
-  new AgentMail inbox messages with `turn/start` or `thread/inject_items`.
-  This requires Codex to run through Remote TUI mode; a normal already-opened
-  `codex` TUI cannot currently be injected through the plugin/MCP layer.
-
-For the natural "start a collaboration-ready Codex" path, launch Codex through
-AgentMail from the project directory:
+For active Claude-to-Codex wakeups, launch Codex through AgentMail from the
+project you want both agents to work on:
 
 ```bash
 agentmail launch-codex --room ecommerce --workspace "$PWD"
@@ -135,252 +132,113 @@ Resume the most recent Codex session through the same wakeup path:
 agentmail launch-codex --room ecommerce --workspace "$PWD" --resume last
 ```
 
-`launch-codex` passes `AGENTMAIL_DB` and `AGENTMAIL_WORKSPACE` into the spawned
-Codex process, so the AgentMail MCP tools and the active bridge resolve the same
-workspace database.
-
-Startup commands (`start`, `launch-codex`, and `bootstrap-codex`) also send a
-deduplicated discovery message to already-online peers. Pass `--no-announce` if
-you want a quiet join.
-
-If you already opened a normal Codex TUI, ask it to run:
+If you already opened a normal Codex TUI, bootstrap a new AgentMail-aware
+Remote TUI:
 
 ```bash
 agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
 ```
 
-To bootstrap into the most recent Codex session:
+The original normal Codex TUI cannot be injected directly through the current
+plugin/MCP layer. Continue active-wakeup collaboration in the new Remote TUI.
+
+Do not globally export `AGENTMAIL_DB=$HOME/.agentmail/agentmail.db` in your
+shell startup files. Keep the database per project, or set `AGENTMAIL_DB` /
+`AGENTMAIL_WORKSPACE` only in the shell for one project. See the
+[install guide](docs/INSTALL.md) for the full global-install workflow.
+
+## Common Workflow
+
+1. Open Claude Code and Codex in the same project.
+2. Start Claude Code with AgentMail channel support and run
+   `/agentmail:start <room> claude`.
+3. Start Codex with `agentmail launch-codex --room <room> --workspace "$PWD"`
+   when you want inbound Claude messages to wake Codex.
+4. Ask one agent to coordinate with the other. Agents send natural-language
+   messages, claim file scope before editing shared areas, and register long
+   outputs as artifacts instead of pasting everything into chat.
+5. Use `agentmail doctor --room <room> --workspace "$PWD"` when setup looks
+   wrong.
+
+## Stable And Experimental Surfaces
+
+Stable in this release:
+
+- SQLite mailbox, rooms, threads, message status, artifacts, and scope claims.
+- CLI commands and stdio MCP tools.
+- Claude Code plugin package and Claude channel delivery.
+- Codex plugin package for explicit mailbox use.
+
+Experimental in this release:
+
+- Codex App Server bridge (`agentmail launch-codex`,
+  `agentmail bootstrap-codex`, and `agentmail codex-bridge ...`). It depends on
+  Codex App Server and Remote TUI APIs and may change in a future release.
+
+## Documentation
+
+- [Install guide](docs/INSTALL.md)
+- [Documentation index](docs/README.md)
+- [Concepts](docs/CONCEPTS.md)
+- [Architecture and module map](docs/ARCHITECTURE.md)
+- [Claude channels](docs/CHANNELS.md)
+- [Codex bridge](docs/CODEX_BRIDGE.md)
+- [CLI reference](docs/CLI_REFERENCE.md)
+- [MCP reference](docs/MCP_REFERENCE.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Testing](docs/TESTING.md)
+- [Release checklist](docs/RELEASE.md)
+- [FAQ](docs/FAQ.md)
+- [中文文档入口](docs/zh-CN/README.md)
+
+## Repository Layout
+
+```text
+agentmail/
+  .claude-plugin/marketplace.json  Claude Code marketplace entrypoint
+  .agents/plugins/marketplace.json Codex marketplace entrypoint
+  pyproject.toml                   Python package metadata
+  *.py                             Core package modules
+  docs/                            User, operator, and maintainer docs
+  skills/                          Source skill guidance for Claude and Codex
+  plugins/                         Self-contained Claude Code and Codex plugin payloads
+  scripts/                         Local install and validation helpers
+  tests/                           Unit and integration tests
+```
+
+AgentMail intentionally ships no plugin `agents/` definitions. Agent behavior
+is negotiated in message bodies instead of being packaged as a fixed workflow.
+
+## Development
+
+Run the validation script before publishing or opening a PR:
 
 ```bash
-agentmail bootstrap-codex --room ecommerce --workspace "$PWD" --resume last
-```
-
-`bootstrap-codex` prepares the workspace and opens a new AgentMail-aware Codex
-Remote TUI window. Continue the collaboration in that new Codex window; the
-original normal TUI still cannot be injected directly.
-
-You can inspect the local setup at any time:
-
-```bash
-agentmail doctor --room ecommerce --workspace "$PWD"
-```
-
-Or run the pieces manually:
-
-```bash
-codex app-server --listen ws://127.0.0.1:4500
-agentmail codex-bridge start \
-  --agent codex \
-  --room ecommerce \
-  --workspace "$PWD" \
-  --listen ws://127.0.0.1:4500 \
-  --no-app-server
-codex --remote ws://127.0.0.1:4500
-```
-
-If more than one Codex thread is loaded, pass `--thread-id` so AgentMail knows
-which thread to wake. Use `--mode inject` only when you want to add context
-without starting a new Codex turn. The default `turn-start` mode consumes Codex
-API budget per delivered message; `inject` only seeds context and does not run
-the model by itself.
-
-## Quick Start
-
-From a repository where both agents are working:
-
-```bash
-agentmail start --agent claude --kind claude --room ecommerce
-agentmail start --agent codex --kind codex --room ecommerce
-agentmail peers --room ecommerce
-agentmail status --agent codex --room ecommerce
-```
-
-Send a message from Codex to Claude:
-
-```bash
-agentmail send \
-  --from codex \
-  --to claude \
-  --room ecommerce \
-  --thread main \
-  --subject "Architecture help" \
-  --body "User wants us to build an ecommerce management system. Please reason about module boundaries and risks."
-```
-
-Read and reply from Claude:
-
-```bash
-agentmail inbox --agent claude --room ecommerce
-agentmail mark --agent claude --message msg_xxx --status claimed
-agentmail reply --agent claude --message msg_xxx --body "I will focus on architecture and data consistency risks."
-```
-
-Claim files before editing:
-
-```bash
-agentmail claim-scope \
-  --agent codex \
-  --room ecommerce \
-  --path src/orders \
-  --reason "Implementing order workflow slice"
-```
-
-Register an artifact:
-
-```bash
-agentmail artifact-add \
-  --agent codex \
-  --room ecommerce \
-  --type log \
-  --path .agentmail/artifacts/test.log \
-  --summary "Focused test output"
-```
-
-Pause a room:
-
-```bash
-agentmail room-status --agent claude --room ecommerce --status paused
-```
-
-Start a background watcher for future inbox messages. It logs new messages and
-can run a command callback; OS notifications are off by default.
-
-```bash
-agentmail notify-start --agent claude --room ecommerce --workspace "$PWD"
-agentmail notify-status --agent claude --room ecommerce --workspace "$PWD"
-agentmail notify-stop --agent claude --room ecommerce --workspace "$PWD"
-```
-
-If you explicitly want an OS notification fallback, opt in:
-
-```bash
-agentmail notify-start --agent claude --room ecommerce --workspace "$PWD" --os-notify
-```
-
-Configure Claude channel delivery for a room:
-
-```bash
-agentmail channel-config --agent claude --room ecommerce --workspace "$PWD"
-agentmail channel-status --workspace "$PWD"
-```
-
-When the Claude plugin MCP server is launched with channel support, new inbox
-messages for that room are emitted as `notifications/claude/channel`. Claude
-Code wraps them as `<channel source="agentmail" ...>` events in the running
-session. The event body is exactly the AgentMail message body; routing metadata
-is carried as tag attributes.
-
-## Local Daemon
-
-The daemon exposes a tiny JSON RPC endpoint for adapters:
-
-```bash
-agentmail serve --host 127.0.0.1 --port 8765
-```
-
-Health checks:
-
-```bash
-curl http://127.0.0.1:8765/healthz
-```
-
-RPC shape:
-
-```json
-{
-  "method": "inbox",
-  "params": {
-    "agent_name": "claude",
-    "room_name": "ecommerce"
-  }
-}
-```
-
-## MCP
-
-Run the stdio MCP server:
-
-```bash
-agentmail mcp
-```
-
-For Claude channel mode, set `AGENTMAIL_CHANNEL=1` in the MCP server
-environment. The Claude plugin does this automatically.
-
-Example MCP server command:
-
-```json
-{
-  "mcpServers": {
-    "agentmail": {
-      "command": "python",
-      "args": ["-m", "agentmail", "mcp"],
-      "env": {
-        "AGENTMAIL_DB": "/absolute/path/to/repo/.agentmail/agentmail.db"
-      }
-    }
-  }
-}
-```
-
-Tools exposed:
-
-- `agentmail_join`
-- `agentmail_peers`
-- `agentmail_status`
-- `agentmail_set_room_status`
-- `agentmail_send`
-- `agentmail_inbox`
-- `agentmail_read_thread`
-- `agentmail_mark`
-- `agentmail_reply`
-- `agentmail_note`
-- `agentmail_add_artifact`
-- `agentmail_artifacts`
-- `agentmail_claim_scope`
-- `agentmail_release_scope`
-- `agentmail_notify_start`
-- `agentmail_notify_stop`
-- `agentmail_notify_status`
-- `agentmail_codex_bridge_start`
-- `agentmail_codex_bridge_stop`
-- `agentmail_codex_bridge_status`
-- `agentmail_timeline`
-
-## Plugins
-
-Installable marketplace payloads live under `agentmail/plugins/`:
-
-- `agentmail/plugins/claude-marketplace` for Claude Code.
-- `agentmail/plugins/codex-marketplace` for Codex.
-
-The repository root also exposes official marketplace entrypoints:
-
-- `.claude-plugin/marketplace.json`
-- `.agents/plugins/marketplace.json`
-
-See `plugins/README.md` for package internals.
-
-## Agent Behavior Guidance
-
-Agents should use AgentMail as a shared mailbox and memory, not as a rigid
-workflow engine:
-
-- Join the room before collaborating.
-- Check peers before assuming the other agent is online.
-- Put free-form communication in `body`; AgentMail will not rewrite it.
-- Send short messages and attach long context as refs.
-- Mark important messages as `seen` or `claimed` before working on them.
-- Reply in the same thread when continuing a conversation.
-- Register long logs, diffs, and generated files as artifacts.
-- Claim paths before editing files that a peer may also touch.
-- Release claims when done.
-- Pause a room before major user redirection or when automation should stop.
-- Ask the user when a high-risk decision is required.
-
-## Verification
-
-```bash
-cd agentmail
 ./scripts/validate.sh
 ```
+
+If you change core Python modules, run:
+
+```bash
+python plugins/sync_vendor.py
+```
+
+The plugin payloads are self-contained and vendor the Python runtime under
+their plugin roots so installed plugins do not reference files outside the
+client cache.
+
+## Security
+
+AgentMail is local, but peer messages are still untrusted input. Review shell
+commands and destructive changes before running them. Do not commit
+`.agentmail/`, because the database can contain project context, paths, and
+agent messages.
+
+Claude channel support currently requires:
+
+```bash
+claude --dangerously-load-development-channels plugin:agentmail@agentmail-collab
+```
+
+Use that flag only for local plugins you trust. See [SECURITY.md](SECURITY.md)
+for the full local security model.

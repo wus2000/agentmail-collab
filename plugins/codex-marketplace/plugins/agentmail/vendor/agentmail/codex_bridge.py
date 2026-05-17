@@ -490,7 +490,7 @@ class CodexAppServerClient:
         self.request(
             "initialize",
             {
-                "clientInfo": {"name": "agentmail", "title": "AgentMail Codex Bridge", "version": "0.1.0"},
+                "clientInfo": {"name": "agentmail", "title": "AgentMail Collab Codex Bridge", "version": "0.1.0"},
                 "capabilities": {
                     "experimentalApi": True,
                     "optOutNotificationMethods": [

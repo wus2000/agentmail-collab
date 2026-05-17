@@ -1,7 +1,7 @@
 {
-  "name": "agentmail-local",
+  "name": "agentmail-collab",
   "interface": {
-    "displayName": "AgentMail Local"
+    "displayName": "AgentMail Collab"
   },
   "plugins": [
     {

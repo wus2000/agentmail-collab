@@ -1,35 +1,21 @@
 # AgentMail for Codex
 
-This Codex plugin bundles:
+This is the Codex plugin payload for AgentMail Collab. For user-facing
+installation instructions, use the top-level `README.md` and
+`docs/INSTALL.md`.
+
+The plugin bundles:
 
 - an AgentMail MCP server
 - an `agentmail` skill
 - a self-contained Python runtime under `vendor/agentmail`
 
-## Install
-
-From the AgentMail repository root:
-
-```bash
-codex plugin marketplace add "$(pwd)"
-```
-
-Restart Codex, open `/plugins`, choose `AgentMail Local`, and install
-`agentmail`.
-
 ## Use
 
-After installing from the `agentmail-local` marketplace, ask Codex:
+After installing from the `agentmail-collab` marketplace, ask Codex:
 
 ```text
 Use @agentmail. Join room ecommerce as codex and check peers/inbox.
-```
-
-For deterministic cross-TUI testing, export the same database before launching
-Codex and Claude Code:
-
-```bash
-export AGENTMAIL_DB="$(pwd)/.agentmail/agentmail.db"
 ```
 
 The plugin MCP config allowlists `AGENTMAIL_DB`, `AGENTMAIL_WORKSPACE`,
@@ -86,3 +72,7 @@ Rebuild the vendored runtime after core changes:
 ```bash
 python plugins/sync_vendor.py
 ```
+
+Prefer the repository root marketplace for normal installs. The nested
+`plugins/codex-marketplace` manifest is present for packaging validation and
+can collide with the root marketplace if both are added to the same client.

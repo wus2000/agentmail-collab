@@ -1,15 +1,15 @@
 {
-  "name": "agentmail-local",
+  "name": "agentmail-collab",
   "owner": {
     "name": "AgentMail Contributors"
   },
-  "description": "Local AgentMail plugins for Claude Code.",
+  "description": "AgentMail Collab plugins for Claude Code.",
   "plugins": [
     {
       "name": "agentmail",
       "source": "./plugins/agentmail",
       "description": "Local peer mailbox for Claude Code and Codex collaboration.",
-      "license": "MIT",
+      "license": "Apache-2.0",
       "category": "Productivity"
     }
   ]

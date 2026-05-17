@@ -44,7 +44,7 @@ The script checks:
 
    ```bash
    claude plugin marketplace add "$(pwd)" --scope local
-   claude plugin install agentmail@agentmail-local --scope local
+   claude plugin install agentmail@agentmail-collab --scope local
    ```
 
 2. Install the Codex marketplace from the repository root:
@@ -56,7 +56,7 @@ The script checks:
 3. Start Claude with channel support:
 
    ```bash
-   claude --dangerously-load-development-channels plugin:agentmail@agentmail-local
+   claude --dangerously-load-development-channels plugin:agentmail@agentmail-collab
    ```
 
 4. Join the same room from Claude and Codex, then send a message both ways.

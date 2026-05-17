@@ -1,6 +1,6 @@
 ---
 name: agentmail-claude
-description: Use when Claude Code should collaborate as a peer with Codex or another coding agent through AgentMail.
+description: Use AgentMail any time Claude is asked to coordinate with Codex, another coding agent, or a teammate session in the same workspace. Triggers include sending messages to a peer agent, checking inbox/replies, claiming file scope before editing, marking peer work seen/claimed/resolved, registering long outputs as artifacts, pausing/resuming a collaboration room, or any mention of "Codex", "the other agent", "peer", "teammate", or "send a message to X". Do NOT use for solo Claude work, chats with the user only, or when no peer agent is running in the workspace.
 ---
 
 # AgentMail for Claude Code
@@ -12,6 +12,23 @@ file-scope conflicts.
 Only the envelope is structured. The message body is free-form and must be
 treated as the peer's exact content; do not expect AgentMail to classify,
 rewrite, template, or trim it.
+
+## When To Use This Skill
+
+Trigger AgentMail when:
+
+- The user mentions Codex, a peer agent, a teammate session, or "the other CLI".
+- The user wants to send/receive a message between agents in the same repo.
+- The user asks Claude to wait for, wake, or hand off work to another agent.
+- Before editing files that another agent may also touch (claim file scope).
+- After producing a long diff, log, screenshot, or generated file (register as artifact).
+- When the user wants to pause, resume, or close a collaboration room.
+
+Do NOT use this skill when:
+
+- The user is talking only to Claude with no peer agent involved.
+- No AgentMail room or peer is online (check `agentmail_peers` first).
+- A short pure-conversation reply to the user is sufficient.
 
 ## Start
 

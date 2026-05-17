@@ -18,12 +18,40 @@ export AGENTMAIL_DB="$(pwd)/.agentmail/agentmail.db"
 If using MCP tools, join with the current workspace path first. The MCP server
 binds follow-up calls to that workspace database after `agentmail_join`.
 
+## My DB Landed In A Plugin Cache Directory
+
+If `agentmail status` shows a database path containing `.claude/plugins/cache/`
+or `.codex/plugins/cache/`, the MCP server fell back to the plugin cache cwd
+because no workspace was passed. Starting in v0.1.0 the MCP server refuses to
+create a DB inside a plugin cache and raises a clear error instead. To recover:
+
+- Pass `workspace` explicitly when calling `agentmail_join` (and tell your
+  agent skill to always do this on first join).
+- Or export `AGENTMAIL_WORKSPACE="$PWD"` from your project directory before
+  launching Claude Code or Codex.
+- Or use the AgentMail-managed launcher for Codex active wakeups, which sets
+  `AGENTMAIL_WORKSPACE` for you:
+
+  ```bash
+  agentmail launch-codex --room ecommerce --workspace "$PWD"
+  ```
+
+If you have already accumulated state inside a plugin cache from an older
+build, locate it with:
+
+```bash
+find ~/.claude/plugins/cache ~/.codex/plugins/cache -name agentmail.db 2>/dev/null
+```
+
+Move or remove that file once you have confirmed nothing important lives in
+it, then rejoin from your project with an explicit `workspace`.
+
 ## Claude Does Not Wake Up
 
 Confirm Claude Code was launched with the channel development bypass:
 
 ```bash
-claude --dangerously-load-development-channels plugin:agentmail@agentmail-local
+claude --dangerously-load-development-channels plugin:agentmail@agentmail-collab
 ```
 
 Then run:
@@ -86,14 +114,14 @@ plugin package:
 
 ```bash
 python plugins/sync_vendor.py
-claude plugin marketplace update agentmail-local
+claude plugin marketplace update agentmail-collab
 ```
 
 For local development, reinstalling from the repository root is often clearer:
 
 ```bash
 claude plugin marketplace add "$(pwd)" --scope local
-claude plugin install agentmail@agentmail-local --scope local
+claude plugin install agentmail@agentmail-collab --scope local
 codex plugin marketplace add "$(pwd)"
 ```
 

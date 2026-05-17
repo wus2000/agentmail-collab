@@ -582,7 +582,7 @@ def cmd_mcp(args: argparse.Namespace) -> Any:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="AgentMail local peer mailbox for coding agents.")
+    parser = argparse.ArgumentParser(description="AgentMail Collab local peer mailbox for coding agents.")
     parser.add_argument("--db", default=os.environ.get("AGENTMAIL_DB"), help="SQLite database path. Defaults to .agentmail/agentmail.db.")
     parser.add_argument("--json", action="store_true", help="Print JSON output.")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -777,7 +777,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_announce_arg(bootstrap_codex, default=True)
     bootstrap_codex.set_defaults(func=cmd_bootstrap_codex)
 
-    doctor = sub.add_parser("doctor", help="Check local AgentMail collaboration state for a workspace.")
+    doctor = sub.add_parser("doctor", help="Check AgentMail Collab collaboration state for a workspace.")
     doctor.add_argument("--room", default="default")
     doctor.add_argument("--workspace", default=".")
     doctor.set_defaults(func=cmd_doctor)

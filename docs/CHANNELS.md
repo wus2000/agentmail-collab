@@ -30,7 +30,7 @@ carried in attributes such as `room`, `message_id`, `from_agent`, `thread_id`,
 Claude channels are in research preview. Start Claude Code with:
 
 ```bash
-claude --dangerously-load-development-channels plugin:agentmail@agentmail-local
+claude --dangerously-load-development-channels plugin:agentmail@agentmail-collab
 ```
 
 Team and Enterprise organizations may also need channels enabled by policy.

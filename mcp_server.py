@@ -316,7 +316,16 @@ class AgentMailMCP:
             return self.active_db_path
         if self.active_db_path:
             return self.active_db_path
-        self.active_db_path = str(default_db_path())
+        fallback = default_db_path()
+        if _under_plugin_cache(fallback):
+            raise RuntimeError(
+                "AgentMail cannot infer the project workspace. Pass `workspace` "
+                "in this tool call, or export AGENTMAIL_WORKSPACE, "
+                "CODEX_WORKSPACE_ROOT, or CLAUDE_PROJECT_DIR before launching. "
+                "Refusing to create a database inside a plugin cache because "
+                "that can mix unrelated projects."
+            )
+        self.active_db_path = str(fallback)
         return self.active_db_path
 
     def _start_channel_thread(self) -> None:
@@ -481,6 +490,17 @@ def _env_db_path() -> str:
     if os.environ.get("AGENTMAIL_DB") or os.environ.get("AGENTMAIL_WORKSPACE") or os.environ.get("CODEX_WORKSPACE_ROOT"):
         return str(default_db_path())
     return ""
+
+
+def _under_plugin_cache(path: str | os.PathLike[str]) -> bool:
+    value = str(path)
+    markers = (
+        "/.claude/plugins/cache/",
+        "/.codex/plugins/cache/",
+        "/Library/Application Support/Claude/plugins/",
+        "/Library/Application Support/Codex/plugins/",
+    )
+    return any(marker in value for marker in markers)
 
 
 def _apply_env_defaults(tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:

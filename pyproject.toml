@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "agentmail-local"
+name = "agentmail-collab"
 version = "0.1.0"
-description = "Local peer mailbox for Claude Code and Codex collaboration."
+description = "Local peer mailbox for coding-agent collaboration."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
@@ -15,7 +15,7 @@ classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
+  "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
@@ -27,6 +27,11 @@ dependencies = []
 [project.scripts]
 agentmail = "agentmail.cli:main"
 agentmail-mcp = "agentmail.mcp_server:main"
+
+[project.urls]
+Homepage = "https://github.com/wus2000/agentmail-collab"
+Repository = "https://github.com/wus2000/agentmail-collab"
+Issues = "https://github.com/wus2000/agentmail-collab/issues"
 
 [tool.setuptools]
 packages = ["agentmail"]

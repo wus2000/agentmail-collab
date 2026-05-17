@@ -20,6 +20,14 @@ class AgentMailMcpTests(unittest.TestCase):
         self.assertNotIn("error", response)
         return response["result"]["structuredContent"]
 
+    def call_error(self, server: AgentMailMCP, idx: int, name: str, arguments: dict) -> dict:
+        response = server.handle_request(
+            {"jsonrpc": "2.0", "id": idx, "method": "tools/call", "params": {"name": name, "arguments": arguments}}
+        )
+        self.assertIsNotNone(response)
+        self.assertIn("error", response)
+        return response["error"]
+
     def test_tool_listing_and_message_flow(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             server = AgentMailMCP(str(Path(temp_dir) / "agentmail.db"))
@@ -92,6 +100,49 @@ class AgentMailMcpTests(unittest.TestCase):
             self.assertEqual(status["agent"], "codex")
             self.assertEqual(status["room"]["name"], "shop")
             self.assertEqual(status["db_path"], str(Path(workspace) / ".agentmail" / "agentmail.db"))
+
+    def test_plugin_cache_cwd_requires_explicit_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            plugin_cache = Path(temp_dir) / ".codex" / "plugins" / "cache" / "agentmail"
+            plugin_cache.mkdir(parents=True)
+            old_cwd = os.getcwd()
+            try:
+                os.chdir(plugin_cache)
+                with patch.dict(os.environ, {}, clear=True):
+                    server = AgentMailMCP()
+                    error = self.call_error(server, 1, "agentmail_status", {"room_name": "shop"})
+            finally:
+                os.chdir(old_cwd)
+
+            self.assertIn("cannot infer the project workspace", error["message"])
+            self.assertFalse((plugin_cache / ".agentmail" / "agentmail.db").exists())
+
+    def test_plugin_cache_cwd_allows_explicit_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir, tempfile.TemporaryDirectory() as workspace:
+            plugin_cache = Path(temp_dir) / ".codex" / "plugins" / "cache" / "agentmail"
+            plugin_cache.mkdir(parents=True)
+            old_cwd = os.getcwd()
+            try:
+                os.chdir(plugin_cache)
+                with patch.dict(os.environ, {}, clear=True):
+                    server = AgentMailMCP()
+                    self.call(
+                        server,
+                        1,
+                        "agentmail_join",
+                        {
+                            "agent_name": "codex",
+                            "agent_kind": "codex",
+                            "room_name": "shop",
+                            "workspace": workspace,
+                        },
+                    )
+                    status = self.call(server, 2, "agentmail_status", {"agent_name": "codex", "room_name": "shop"})
+            finally:
+                os.chdir(old_cwd)
+
+            self.assertEqual(status["db_path"], str(Path(workspace) / ".agentmail" / "agentmail.db"))
+            self.assertFalse((plugin_cache / ".agentmail" / "agentmail.db").exists())
 
     def test_unknown_tool_returns_error(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

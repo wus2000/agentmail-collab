@@ -1,6 +1,6 @@
 ---
 name: agentmail
-description: Use AgentMail when coordinating with a peer Claude Code or Codex session through a local mailbox.
+description: Use AgentMail any time Codex is asked to coordinate with a peer Claude Code or Codex session in the same workspace through the local mailbox. Triggers include sending/receiving peer messages, checking inbox, claiming file scope before editing, marking peer work seen/claimed/resolved, registering long outputs as artifacts, or any user mention of "Claude", "peer", "teammate", "the other agent", or "send a message". Also trigger when an independent review by the peer agent would improve correctness, architecture, scope, or review quality. Prefer the bundled MCP tools (`agentmail_*`) over shelling out. Do NOT use for solo work, chats with the user only, or when no peer is online.
 ---
 
 # AgentMail
@@ -8,6 +8,18 @@ description: Use AgentMail when coordinating with a peer Claude Code or Codex se
 Use AgentMail as a peer mailbox, not as a workflow engine. The only structured
 part is the envelope: sender, recipients, room, thread, status, refs, tags, and
 artifact metadata. Message `body` is opaque and must be preserved exactly.
+
+## When To Use
+
+Trigger when the user mentions Claude, a peer agent, or a teammate session;
+when sending/receiving messages between agents; before editing files another
+agent may touch (scope claim); after producing long outputs (register as
+artifact); or when the peer's independent judgment would improve correctness,
+architecture, scope, or review quality.
+
+Do NOT use when only the user is involved, no peer is online (check
+`agentmail_peers`), or every small implementation step does not need peer
+input — keep collaboration peer-level, not micromanaged.
 
 Prefer MCP tools when they are available:
 

@@ -18,7 +18,7 @@ while [[ $# -gt 0 ]]; do
       cat <<'EOF'
 Usage: scripts/install-local.sh [--claude-only|--codex-only]
 
-Install the local AgentMail marketplace into Claude Code and/or Codex.
+Install the AgentMail Collab marketplace into Claude Code and/or Codex.
 Run from anywhere inside the checkout.
 EOF
       exit 0
@@ -38,7 +38,7 @@ if [[ "${install_claude}" -eq 1 ]]; then
   }
   claude plugin validate "${ROOT}"
   claude plugin marketplace add "${ROOT}" --scope local
-  claude plugin install agentmail@agentmail-local --scope local
+  claude plugin install agentmail@agentmail-collab --scope local
 fi
 
 if [[ "${install_codex}" -eq 1 ]]; then
@@ -48,10 +48,10 @@ if [[ "${install_codex}" -eq 1 ]]; then
   }
   if ! codex plugin marketplace add "${ROOT}"; then
     cat >&2 <<EOF
-Codex marketplace agentmail-local is already configured from a different source.
+Codex marketplace agentmail-collab is already configured from a different source.
 Remove it and add this checkout explicitly:
 
-  codex plugin marketplace remove agentmail-local
+  codex plugin marketplace remove agentmail-collab
   codex plugin marketplace add "${ROOT}"
 EOF
     exit 1
@@ -59,13 +59,13 @@ EOF
 fi
 
 cat <<EOF
-AgentMail local marketplace installed.
+AgentMail Collab marketplace installed.
 
 CLI command, if not already installed:
   python3 -m pip install -e "${ROOT}"
 
 Claude channel startup:
-  claude --dangerously-load-development-channels plugin:agentmail@agentmail-local
+  claude --dangerously-load-development-channels plugin:agentmail@agentmail-collab
 
 Claude room command:
   /agentmail:start ecommerce claude

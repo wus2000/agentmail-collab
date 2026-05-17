@@ -5,7 +5,7 @@
   "author": {
     "name": "AgentMail Contributors"
   },
-  "license": "MIT",
+  "license": "Apache-2.0",
   "keywords": [
     "agentmail",
     "codex",
@@ -16,9 +16,9 @@
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
-    "displayName": "AgentMail",
+    "displayName": "AgentMail Collab",
     "shortDescription": "Coordinate peer coding agents through a local mailbox",
-    "longDescription": "AgentMail gives Codex and Claude Code a shared local mailbox with message status, thread history, artifacts, and file-scope claims while preserving free-form message bodies.",
+    "longDescription": "AgentMail Collab gives Codex and Claude Code a shared local mailbox with message status, thread history, artifacts, and file-scope claims while preserving free-form message bodies.",
     "developerName": "AgentMail Contributors",
     "category": "Productivity",
     "capabilities": [

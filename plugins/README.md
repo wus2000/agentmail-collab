@@ -1,15 +1,23 @@
 # AgentMail Plugin Packages
 
-This directory contains the installable plugin payloads for both Codex and
-Claude Code. The formal marketplace entrypoints live at the `agentmail/`
-repository root:
+This directory contains the self-contained plugin payloads for Claude Code and
+Codex. It is packaging infrastructure, not the main install guide.
+
+Use the top-level docs as the single source of truth:
+
+- `README.md` for the quick start.
+- `docs/INSTALL.md` for full installation and upgrade steps.
+- `docs/CODEX_BRIDGE.md` for Codex Remote TUI active wakeups.
+
+The supported marketplace entrypoints live at the repository root:
 
 - `agentmail/.claude-plugin/marketplace.json`
 - `agentmail/.agents/plugins/marketplace.json`
 
-The plugin packages are self-contained: each plugin bundles a copy of the
-AgentMail Python package under `vendor/`, so installed plugins do not need to
-reference files outside their plugin cache directory.
+The nested marketplace directories mirror installable payloads for local
+validation and distribution testing. Do not add both the root marketplace and a
+nested `plugins/*-marketplace` directory to the same client; the manifests
+currently share the local marketplace name and can collide.
 
 ## Layout
 
@@ -37,123 +45,19 @@ plugins/
       vendor/agentmail/
 ```
 
-## Rebuild Bundled Core
+Each plugin bundles AgentMail under `vendor/agentmail/` so installed plugins do
+not reference source files outside the client plugin cache.
 
-Run this after changing the core package:
+## Rebuild Bundled Runtime
 
-```bash
-python agentmail/plugins/sync_vendor.py
-```
-
-## Install In Claude Code
-
-From the `agentmail/` directory:
+Run this after changing core Python files:
 
 ```bash
-claude plugin validate .
-claude plugin marketplace add "$(pwd)" --scope local
-claude plugin install agentmail@agentmail-local --scope local
+python plugins/sync_vendor.py
 ```
 
-Restart or run `/reload-plugins`, then start a room:
-
-```text
-/agentmail:start ecommerce claude
-```
-
-To let AgentMail wake the already-running Claude Code session, start Claude
-Code with channels enabled for the local plugin. During Claude Code's research
-preview, local plugins need the development-channel bypass:
+The release validation script runs the vendor sync and plugin checks:
 
 ```bash
-claude --dangerously-load-development-channels plugin:agentmail@agentmail-local
+./scripts/validate.sh
 ```
-
-After `/agentmail:start ecommerce claude`, the plugin records that room as the
-active AgentMail channel target. Future messages addressed to `claude` in that
-room are pushed into the current Claude Code session as channel events.
-
-## Install In Codex
-
-From the `agentmail/` directory:
-
-```bash
-codex plugin marketplace add "$(pwd)"
-```
-
-Restart Codex, open the plugin directory, choose `AgentMail Local`, and install
-`agentmail`. Then ask Codex to use `$agentmail` and join the same room:
-
-```text
-Use @agentmail. Join room ecommerce as codex, list peers, and check my inbox.
-```
-
-In the Codex CLI, the plugin directory is opened with `/plugins`.
-
-For Claude-to-Codex active wakeups, start Codex through the experimental App
-Server bridge instead of a normal TUI:
-
-```bash
-agentmail launch-codex --room ecommerce --workspace "$PWD"
-```
-
-From an already-open normal Codex TUI:
-
-```bash
-agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
-```
-
-This uses the same mailbox and message status model. The bridge delivers
-Claude-origin inbox messages into Codex through Codex App Server `turn/start`.
-
-## Shared Database
-
-By default AgentMail uses `<workspace>/.agentmail/agentmail.db`. The wrapper
-uses the workspace exposed by the client, and the MCP server also binds itself
-to `AGENTMAIL_WORKSPACE` or to the `workspace` passed on the first
-`agentmail_join` call. If neither is
-available, it falls back to:
-
-```text
-~/.agentmail/agentmail.db
-```
-
-For deterministic testing across both TUIs, set this before launching both
-Codex and Claude Code:
-
-```bash
-export AGENTMAIL_DB="$(pwd)/.agentmail/agentmail.db"
-```
-
-Message bodies remain opaque and exact. Only envelope fields such as sender,
-recipients, room, thread, refs, tags, and status are structured.
-
-## Background Notifications
-
-Claude channels are the primary wakeup path for Claude Code. `/agentmail:start`
-only joins the room and configures the channel target; it does not start a
-watcher or show macOS notifications.
-
-If you still need a manual fallback, `/agentmail:notify-start` starts a
-background watcher for logs or command callbacks. It does not show OS
-notifications by default. You can manage it manually:
-
-```text
-/agentmail:notify-start ecommerce claude
-/agentmail:status ecommerce claude
-/agentmail:notify-stop ecommerce claude
-```
-
-The underlying CLI also supports command callbacks:
-
-```bash
-agentmail notify-start \
-  --agent claude \
-  --room ecommerce \
-  --workspace "$PWD" \
-  --command 'jq -r .subject >> .agentmail/notifications.log'
-```
-
-The callback receives the full message JSON on stdin and message metadata in
-`AGENTMAIL_MESSAGE_ID`, `AGENTMAIL_FROM`, `AGENTMAIL_SUBJECT`,
-`AGENTMAIL_TRACE_ID`, and `AGENTMAIL_THREAD_ID`.
