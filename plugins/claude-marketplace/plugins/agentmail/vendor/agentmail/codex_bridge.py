@@ -262,7 +262,11 @@ def start_app_server_process(paths: BridgePaths, listen: str) -> dict[str, Any]:
         raise CodexBridgeError("`codex` CLI not found on PATH; install Codex or pass --no-app-server")
     existing_pid = _read_pid(paths.app_server_pid)
     if existing_pid and pid_alive(existing_pid):
-        return {"started": False, "pid": existing_pid, "listen": listen}
+        previous_config = _read_json(paths.config) or {}
+        if previous_config.get("listen") == listen and wait_for_app_server(listen, timeout=1.0):
+            return {"started": False, "pid": existing_pid, "listen": listen, "ready": True}
+        _terminate_pid(existing_pid)
+        _unlink_file(paths.app_server_pid)
     log = paths.app_server_log.open("a", encoding="utf-8")
     try:
         process = subprocess.Popen(
@@ -278,6 +282,10 @@ def start_app_server_process(paths: BridgePaths, listen: str) -> dict[str, Any]:
     _detach_popen(process)
     paths.app_server_pid.write_text(str(process.pid), encoding="utf-8")
     ready = wait_for_app_server(listen, timeout=10.0)
+    if not ready:
+        _terminate_pid(process.pid)
+        _unlink_file(paths.app_server_pid)
+        raise CodexBridgeError(f"Codex app-server did not become ready at {listen}")
     return {"started": True, "pid": process.pid, "listen": listen, "ready": ready}
 
 

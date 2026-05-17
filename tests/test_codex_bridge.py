@@ -225,6 +225,54 @@ class AgentMailCodexBridgeTests(unittest.TestCase):
             self.assertIn("codex-bridge", popen.call_args_list[1].args[0])
             self.assertEqual(bridge_status(db, "shop", "codex")["config"]["listen"], "ws://127.0.0.1:4999")
 
+    def test_start_bridge_replaces_stale_app_server_for_new_listen(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db = Path(temp_dir) / "agentmail.db"
+            paths = bridge_paths(db, "shop", "codex")
+            paths.bridge_dir.mkdir(parents=True, exist_ok=True)
+            paths.log_dir.mkdir(parents=True, exist_ok=True)
+            paths.app_server_pid.write_text("999", encoding="utf-8")
+            paths.config.write_text('{"listen": "ws://127.0.0.1:4500"}', encoding="utf-8")
+            app_proc = Mock()
+            app_proc.pid = 111
+            bridge_proc = Mock()
+            bridge_proc.pid = 222
+
+            with (
+                patch("agentmail.codex_bridge.shutil.which", return_value="/usr/local/bin/codex"),
+                patch("agentmail.codex_bridge.subprocess.Popen", side_effect=[app_proc, bridge_proc]) as popen,
+                patch("agentmail.codex_bridge.wait_for_app_server", return_value=True),
+                patch("agentmail.codex_bridge.pid_alive", return_value=True),
+                patch("agentmail.codex_bridge._terminate_pid", return_value=True) as terminate,
+            ):
+                status = start_bridge(db, "shop", "codex", workspace=temp_dir, listen="ws://127.0.0.1:4999")
+
+            terminate.assert_called_once_with(999)
+            self.assertTrue(status["started"])
+            self.assertEqual(popen.call_args_list[0].args[0], ["codex", "app-server", "--listen", "ws://127.0.0.1:4999"])
+            self.assertEqual(paths.app_server_pid.read_text(encoding="utf-8"), "111")
+
+    def test_start_bridge_fails_when_app_server_never_becomes_ready(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db = Path(temp_dir) / "agentmail.db"
+            paths = bridge_paths(db, "shop", "codex")
+            app_proc = Mock()
+            app_proc.pid = 111
+
+            with (
+                patch("agentmail.codex_bridge.shutil.which", return_value="/usr/local/bin/codex"),
+                patch("agentmail.codex_bridge.subprocess.Popen", return_value=app_proc) as popen,
+                patch("agentmail.codex_bridge.wait_for_app_server", return_value=False),
+                patch("agentmail.codex_bridge.pid_alive", return_value=False),
+                patch("agentmail.codex_bridge._terminate_pid", return_value=True) as terminate,
+            ):
+                with self.assertRaisesRegex(CodexBridgeError, "did not become ready"):
+                    start_bridge(db, "shop", "codex", workspace=temp_dir, listen="ws://127.0.0.1:4999")
+
+            self.assertEqual(popen.call_count, 1)
+            terminate.assert_called_once_with(111)
+            self.assertFalse(paths.app_server_pid.exists())
+
     def test_foreground_run_pids_are_reported_and_cleared(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             db = Path(temp_dir) / "agentmail.db"
