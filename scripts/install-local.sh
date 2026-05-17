@@ -46,7 +46,16 @@ if [[ "${install_codex}" -eq 1 ]]; then
     printf '%s\n' "codex CLI not found" >&2
     exit 1
   }
+  if ! codex plugin marketplace add "${ROOT}"; then
+    cat >&2 <<EOF
+Codex marketplace agentmail-local is already configured from a different source.
+Remove it and add this checkout explicitly:
+
+  codex plugin marketplace remove agentmail-local
   codex plugin marketplace add "${ROOT}"
+EOF
+    exit 1
+  fi
 fi
 
 cat <<EOF
