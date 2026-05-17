@@ -104,6 +104,22 @@ def _open_terminal(command: str) -> bool:
     return completed.returncode == 0
 
 
+def _codex_remote_command(args: argparse.Namespace) -> list[str]:
+    resume = getattr(args, "resume", "")
+    if resume:
+        cmd = ["codex", "resume"]
+        if resume == "last":
+            cmd.append("--last")
+        elif resume != "picker":
+            cmd.append(resume)
+    else:
+        cmd = ["codex"]
+    cmd.extend(["--remote", args.listen])
+    if args.workspace:
+        cmd.extend(["--cd", args.workspace])
+    return cmd
+
+
 def _emit(payload: Any, as_json: bool) -> None:
     if as_json:
         print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
@@ -401,9 +417,7 @@ def cmd_codex_bridge_run(args: argparse.Namespace) -> Any:
         since_now=not args.include_existing,
         start_app_server=True,
     )
-    cmd = ["codex", "--remote", args.listen]
-    if args.workspace:
-        cmd.extend(["--cd", args.workspace])
+    cmd = _codex_remote_command(args)
     register_foreground_run(db_path, args.room, args.agent)
     try:
         process = subprocess.Popen(cmd)
@@ -473,6 +487,8 @@ def cmd_bootstrap_codex(args: argparse.Namespace) -> Any:
         launch_command += " --include-existing"
     if args.keep_running:
         launch_command += " --keep-running"
+    if args.resume:
+        launch_command += " " + shlex.join(["--resume", args.resume])
     command = f"cd {shlex.quote(str(workspace))} && {launch_command}"
     opened = False if args.dry_run else (_open_terminal(command) if args.open_terminal else False)
     return {
@@ -805,6 +821,14 @@ def _add_codex_launcher_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--mode", default="turn-start", choices=["turn-start", "inject"])
     parser.add_argument("--interval", type=float, default=2.0)
     parser.add_argument("--include-existing", action="store_true")
+    parser.add_argument(
+        "--resume",
+        nargs="?",
+        const="picker",
+        default="",
+        metavar="SESSION",
+        help="Resume a Codex session in the remote TUI. Use without a value for the picker, `last` for the most recent session, or pass a session id/thread name.",
+    )
 
 
 def main(argv: list[str] | None = None) -> int:

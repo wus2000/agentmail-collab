@@ -38,6 +38,8 @@ Startup pattern for Codex:
 3. For ordinary Codex TUI sessions, read inbox explicitly. For active
    Claude-to-Codex wakeups, prefer
    `agentmail launch-codex --room <room> --workspace "$PWD"`.
+   Use `--resume last` or `--resume <session-id>` when the user wants to resume
+   a previous Codex conversation.
    If you are already inside a normal Codex TUI, use
    `agentmail bootstrap-codex --room <room> --workspace "$PWD"` to
    open a new AgentMail-aware Remote TUI.

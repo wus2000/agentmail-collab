@@ -102,11 +102,23 @@ Start Codex through AgentMail's managed Remote TUI launcher:
 agentmail launch-codex --room ecommerce --workspace "$PWD"
 ```
 
+Resume the most recent Codex session instead of starting a fresh one:
+
+```bash
+agentmail launch-codex --room ecommerce --workspace "$PWD" --resume last
+```
+
 If you already opened a normal Codex TUI, ask Codex to run this bootstrap
 command:
 
 ```bash
 agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
+```
+
+To bootstrap into the most recent Codex session:
+
+```bash
+agentmail bootstrap-codex --room ecommerce --workspace "$PWD" --resume last
 ```
 
 The bootstrap command joins the room, chooses an available local App Server

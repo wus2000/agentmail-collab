@@ -3,11 +3,13 @@ from __future__ import annotations
 import io
 import json
 import os
-import time
 import tempfile
+import time
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 from agentmail import cli
 
@@ -243,6 +245,83 @@ class AgentMailCliTests(unittest.TestCase):
             rc, peers_text = self.run_cli(db, "peers", "--room", "shop")
             self.assertEqual(rc, 0)
             self.assertEqual(json.loads(peers_text)[0]["name"], "codex")
+
+    def test_bootstrap_codex_passes_resume_to_launch_command(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            db = Path(workspace) / ".agentmail" / "agentmail.db"
+
+            rc, text = self.run_cli(
+                db,
+                "bootstrap-codex",
+                "--room",
+                "shop",
+                "--workspace",
+                workspace,
+                "--listen",
+                "ws://127.0.0.1:4999",
+                "--resume",
+                "last",
+                "--dry-run",
+                "--no-open-terminal",
+            )
+
+            self.assertEqual(rc, 0)
+            self.assertIn("--resume last", json.loads(text)["command"])
+
+    def test_codex_remote_command_supports_resume_modes(self) -> None:
+        base = {"listen": "ws://127.0.0.1:4999", "workspace": "/tmp/work"}
+
+        self.assertEqual(
+            cli._codex_remote_command(SimpleNamespace(**base, resume="")),
+            ["codex", "--remote", "ws://127.0.0.1:4999", "--cd", "/tmp/work"],
+        )
+        self.assertEqual(
+            cli._codex_remote_command(SimpleNamespace(**base, resume="picker")),
+            ["codex", "resume", "--remote", "ws://127.0.0.1:4999", "--cd", "/tmp/work"],
+        )
+        self.assertEqual(
+            cli._codex_remote_command(SimpleNamespace(**base, resume="last")),
+            ["codex", "resume", "--last", "--remote", "ws://127.0.0.1:4999", "--cd", "/tmp/work"],
+        )
+        self.assertEqual(
+            cli._codex_remote_command(SimpleNamespace(**base, resume="session-1")),
+            ["codex", "resume", "session-1", "--remote", "ws://127.0.0.1:4999", "--cd", "/tmp/work"],
+        )
+
+    def test_launch_codex_uses_resume_command(self) -> None:
+        with tempfile.TemporaryDirectory() as workspace:
+            db = Path(workspace) / ".agentmail" / "agentmail.db"
+            process = Mock()
+            process.pid = 333
+            process.wait.return_value = 0
+
+            with (
+                patch("agentmail.codex_bridge.shutil.which", return_value="/usr/local/bin/codex"),
+                patch("agentmail.codex_bridge.subprocess.Popen") as bridge_popen,
+                patch("agentmail.codex_bridge.wait_for_app_server", return_value=True),
+                patch("agentmail.codex_bridge.pid_alive", return_value=False),
+                patch("agentmail.cli.subprocess.Popen", return_value=process) as codex_popen,
+            ):
+                bridge_popen.side_effect = [Mock(pid=111), Mock(pid=222)]
+                rc, text = self.run_cli(
+                    db,
+                    "launch-codex",
+                    "--room",
+                    "shop",
+                    "--workspace",
+                    workspace,
+                    "--listen",
+                    "ws://127.0.0.1:4999",
+                    "--resume",
+                    "last",
+                )
+
+            self.assertEqual(rc, 0)
+            self.assertEqual(
+                codex_popen.call_args.args[0],
+                ["codex", "resume", "--last", "--remote", "ws://127.0.0.1:4999", "--cd", str(Path(workspace).resolve())],
+            )
+            self.assertEqual(json.loads(text)["codex_exit_code"], 0)
 
     def test_doctor_reports_workspace_database_and_peers(self) -> None:
         with tempfile.TemporaryDirectory() as workspace:

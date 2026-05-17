@@ -129,10 +129,22 @@ AgentMail from the project directory:
 agentmail launch-codex --room ecommerce --workspace "$PWD"
 ```
 
+Resume the most recent Codex session through the same wakeup path:
+
+```bash
+agentmail launch-codex --room ecommerce --workspace "$PWD" --resume last
+```
+
 If you already opened a normal Codex TUI, ask it to run:
 
 ```bash
 agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
+```
+
+To bootstrap into the most recent Codex session:
+
+```bash
+agentmail bootstrap-codex --room ecommerce --workspace "$PWD" --resume last
 ```
 
 `bootstrap-codex` prepares the workspace and opens a new AgentMail-aware Codex

@@ -58,6 +58,12 @@ Start a managed Remote TUI session:
 agentmail launch-codex --room ecommerce --workspace "$PWD"
 ```
 
+Resume the most recent Codex session:
+
+```bash
+agentmail launch-codex --room ecommerce --workspace "$PWD" --resume last
+```
+
 If you are already in a normal Codex TUI, use the bootstrap wrapper to open a
 new AgentMail-aware Remote TUI:
 

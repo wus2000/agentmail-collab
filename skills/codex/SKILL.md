@@ -56,12 +56,21 @@ launcher from the project directory:
 agentmail launch-codex --room ecommerce --workspace "$PWD"
 ```
 
+To resume an existing Codex session through the active wakeup path:
+
+```bash
+agentmail launch-codex --room ecommerce --workspace "$PWD" --resume last
+```
+
 If you are already running inside a normal Codex TUI and the user asks to enable
 the full collaboration link, bootstrap a new AgentMail-aware Remote TUI:
 
 ```bash
 agentmail bootstrap-codex --room ecommerce --workspace "$PWD"
 ```
+
+If the user wants the new Remote TUI to resume a prior session, pass
+`--resume last` or `--resume <session-id>`.
 
 This keeps the same AgentMail room, inbox, message status, and body-preserving
 semantics, but delivers new messages into Codex through `turn/start`.
